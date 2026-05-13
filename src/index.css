@@ -1,0 +1,20 @@
+@import 'tailwindcss';
+
+/* Paleta inspirada en la identidad visual del Mundial 2026 (azul profundo, oro trofeo, acentos rojo/cian) */
+:root {
+  --wc26-navy: #050d1a;
+  --wc26-blue: #006cbf;
+  --wc26-gold: #e8c547;
+  --wc26-red: #c8102e;
+  --wc26-ice: #7ec8ff;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100svh;
+  width: 100%;
+  box-sizing: border-box;
+}
