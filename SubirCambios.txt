@@ -1,0 +1,5 @@
+En la carpeta del repo (por ejemplo C:\ProgramasALTE\porra-mundial):
+git status
+git add .
+git commit -m "Describe el cambio en una frase"
+git push origin main

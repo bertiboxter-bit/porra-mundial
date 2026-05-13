@@ -1,6 +1,6 @@
 -- =============================================================================
--- Supabase → SQL Editor: ejecuta DESPUÉS de revisar duplicados de nickname
--- (Varias porras por pool_slug: ver predictions-pool-slug.sql, aún desactivado en app.)
+-- SQL Editor: ejecuta DESPUÉS de revisar duplicados de nickname
+-- (Proyecto nuevo: preferir predictions-username-display.sql — usuario + nombre público.)
 -- =============================================================================
 -- 1) Comprueba si ya hay el mismo nick en varias filas:
 --    SELECT nickname, COUNT(*) AS n FROM predictions GROUP BY nickname HAVING COUNT(*) > 1;
