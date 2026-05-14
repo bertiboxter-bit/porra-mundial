@@ -152,25 +152,61 @@ export function buildRoundOf32Teams(predictions) {
 }
 
 /**
+ * Ganador del cruce: 90' o, si empate, tanda de penaltis (`pensHome` / `pensAway`).
+ * @param {string | null} homeTeam
+ * @param {string | null} awayTeam
+ * @param {{ home?: string|number, away?: string|number, pensHome?: string|number, pensAway?: string|number }|null|undefined} cell
+ */
+export function getKnockoutWinnerFromCell(homeTeam, awayTeam, cell) {
+  if (!homeTeam || !awayTeam || !cell || typeof cell !== 'object') return null
+  const h = Number(cell.home)
+  const a = Number(cell.away)
+  if (Number.isNaN(h) || Number.isNaN(a)) return null
+  if (h > a) return homeTeam
+  if (a > h) return awayTeam
+  const ph = Number(cell.pensHome)
+  const pa = Number(cell.pensAway)
+  if (Number.isNaN(ph) || Number.isNaN(pa)) return null
+  if (ph > pa) return homeTeam
+  if (pa > ph) return awayTeam
+  return null
+}
+
+/**
  * @param {string | null} homeTeam
  * @param {string | null} awayTeam
  * @param {string | undefined} rawHome
  * @param {string | undefined} rawAway
  */
 export function getKnockoutWinner(homeTeam, awayTeam, rawHome, rawAway) {
-  if (!homeTeam || !awayTeam) return null
-  const h = Number(rawHome)
-  const a = Number(rawAway)
-  if (Number.isNaN(h) || Number.isNaN(a)) return null
-  if (h > a) return homeTeam
-  if (a > h) return awayTeam
-  return null
+  return getKnockoutWinnerFromCell(homeTeam, awayTeam, { home: rawHome, away: rawAway })
+}
+
+export function getKnockoutLoserFromCell(homeTeam, awayTeam, cell) {
+  const w = getKnockoutWinnerFromCell(homeTeam, awayTeam, cell)
+  if (!w) return null
+  return w === homeTeam ? awayTeam : homeTeam
 }
 
 export function getKnockoutLoser(homeTeam, awayTeam, rawHome, rawAway) {
-  const w = getKnockoutWinner(homeTeam, awayTeam, rawHome, rawAway)
-  if (!w) return null
-  return w === homeTeam ? awayTeam : homeTeam
+  return getKnockoutLoserFromCell(homeTeam, awayTeam, { home: rawHome, away: rawAway })
+}
+
+/**
+ * @param {Record<string, { home?: string, away?: string, pensHome?: string, pensAway?: string }>} prev
+ * @param {string} key
+ * @param {'home' | 'away' | 'pensHome' | 'pensAway'} side
+ * @param {string} val
+ */
+export function applyKnockoutScorePatch(prev, key, side, val) {
+  const cur = { ...(prev[key] || {}), [side]: val }
+  const h = Number(cur.home)
+  const a = Number(cur.away)
+  if (!Number.isNaN(h) && !Number.isNaN(a) && h !== a) {
+    delete cur.pensHome
+    delete cur.pensAway
+  }
+  return { ...prev, [key]: cur }
 }
 
 function labelOrWinner(team, prevFifa) {
@@ -179,7 +215,7 @@ function labelOrWinner(team, prevFifa) {
 
 /**
  * @param {Record<number, { home?: string, away?: string }>} predictions
- * @param {Record<string, { home?: string, away?: string }>} koScores — claves r32-73, r16-90, qf-97, sf-101, fin-104, tp-103
+ * @param {Record<string, { home?: string, away?: string, pensHome?: string, pensAway?: string }>} koScores — claves r32-73, r16-90, qf-97, sf-101, fin-104, tp-103
  */
 export function computeFullKnockout(predictions, koScores) {
   /** @type {Record<number, string | null>} */
@@ -188,12 +224,8 @@ export function computeFullKnockout(predictions, koScores) {
   const r32 = buildRoundOf32Teams(predictions).map(m => {
     const d = R32_DATES[m.fifa]
     const key = `r32-${m.fifa}`
-    const w = getKnockoutWinner(
-      m.homeTeam,
-      m.awayTeam,
-      koScores[key]?.home,
-      koScores[key]?.away,
-    )
+    const cell = koScores[key] && typeof koScores[key] === 'object' ? koScores[key] : {}
+    const w = getKnockoutWinnerFromCell(m.homeTeam, m.awayTeam, cell)
     winnerOf[m.fifa] = w
     return {
       fifa: m.fifa,
@@ -211,7 +243,8 @@ export function computeFullKnockout(predictions, koScores) {
     const ht = winnerOf[row.from[0]]
     const at = winnerOf[row.from[1]]
     const key = `r16-${row.fifa}`
-    const w = getKnockoutWinner(ht, at, koScores[key]?.home, koScores[key]?.away)
+    const cell = koScores[key] && typeof koScores[key] === 'object' ? koScores[key] : {}
+    const w = getKnockoutWinnerFromCell(ht, at, cell)
     winnerOf[row.fifa] = w
     return {
       ...row,
@@ -228,7 +261,8 @@ export function computeFullKnockout(predictions, koScores) {
     const ht = winnerOf[row.from[0]]
     const at = winnerOf[row.from[1]]
     const key = `qf-${row.fifa}`
-    const w = getKnockoutWinner(ht, at, koScores[key]?.home, koScores[key]?.away)
+    const cell = koScores[key] && typeof koScores[key] === 'object' ? koScores[key] : {}
+    const w = getKnockoutWinnerFromCell(ht, at, cell)
     winnerOf[row.fifa] = w
     return {
       ...row,
@@ -245,7 +279,8 @@ export function computeFullKnockout(predictions, koScores) {
     const ht = winnerOf[row.from[0]]
     const at = winnerOf[row.from[1]]
     const key = `sf-${row.fifa}`
-    const w = getKnockoutWinner(ht, at, koScores[key]?.home, koScores[key]?.away)
+    const cell = koScores[key] && typeof koScores[key] === 'object' ? koScores[key] : {}
+    const w = getKnockoutWinnerFromCell(ht, at, cell)
     winnerOf[row.fifa] = w
     return {
       ...row,
@@ -261,38 +296,22 @@ export function computeFullKnockout(predictions, koScores) {
   const sf101 = semiRows.find(s => s.fifa === 101)
   const sf102 = semiRows.find(s => s.fifa === 102)
 
+  const cell101 = koScores['sf-101'] && typeof koScores['sf-101'] === 'object' ? koScores['sf-101'] : {}
+  const cell102 = koScores['sf-102'] && typeof koScores['sf-102'] === 'object' ? koScores['sf-102'] : {}
   const l101 =
     sf101 &&
-    getKnockoutLoser(
-      sf101.homeTeam,
-      sf101.awayTeam,
-      koScores['sf-101']?.home,
-      koScores['sf-101']?.away,
-    )
+    getKnockoutLoserFromCell(sf101.homeTeam, sf101.awayTeam, cell101)
   const l102 =
     sf102 &&
-    getKnockoutLoser(
-      sf102.homeTeam,
-      sf102.awayTeam,
-      koScores['sf-102']?.home,
-      koScores['sf-102']?.away,
-    )
+    getKnockoutLoserFromCell(sf102.homeTeam, sf102.awayTeam, cell102)
 
-  const tpWinner = getKnockoutWinner(
-    l101,
-    l102,
-    koScores['tp-103']?.home,
-    koScores['tp-103']?.away,
-  )
+  const cellTp = koScores['tp-103'] && typeof koScores['tp-103'] === 'object' ? koScores['tp-103'] : {}
+  const tpWinner = getKnockoutWinnerFromCell(l101, l102, cellTp)
 
   const fHome = winnerOf[101]
   const fAway = winnerOf[102]
-  const cupWinner = getKnockoutWinner(
-    fHome,
-    fAway,
-    koScores['fin-104']?.home,
-    koScores['fin-104']?.away,
-  )
+  const cellFin = koScores['fin-104'] && typeof koScores['fin-104'] === 'object' ? koScores['fin-104'] : {}
+  const cupWinner = getKnockoutWinnerFromCell(fHome, fAway, cellFin)
 
   return {
     round32: r32,

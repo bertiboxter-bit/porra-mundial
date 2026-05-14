@@ -1,31 +1,5 @@
-import { getKnockoutWinner } from './bracketLogic.js'
+import { getKnockoutWinnerFromCell } from './bracketLogic.js'
 import { TeamFlag } from './TeamFlag.jsx'
-
-function ScorePair({ sKey, scores, onPatch, locked, canEdit }) {
-  const p = scores[sKey] || {}
-  const editable = canEdit && !locked
-  return (
-    <div className="flex items-center justify-center gap-2 shrink-0">
-      <input
-        type="number"
-        min="0"
-        disabled={!editable}
-        className="w-12 rounded-lg border border-white/20 bg-black/30 p-2 text-center text-sm disabled:opacity-40"
-        value={p.home ?? ''}
-        onChange={e => onPatch(sKey, 'home', e.target.value)}
-      />
-      <span className="text-white/50">-</span>
-      <input
-        type="number"
-        min="0"
-        disabled={!editable}
-        className="w-12 rounded-lg border border-white/20 bg-black/30 p-2 text-center text-sm disabled:opacity-40"
-        value={p.away ?? ''}
-        onChange={e => onPatch(sKey, 'away', e.target.value)}
-      />
-    </div>
-  )
-}
 
 function MatchCard({
   title,
@@ -40,8 +14,16 @@ function MatchCard({
   locked,
 }) {
   const p = scores[scoreKey] || {}
-  const decided = getKnockoutWinner(homeTeam, awayTeam, p.home, p.away)
+  const h = Number(p.home)
+  const a = Number(p.away)
+  const regValid = !Number.isNaN(h) && !Number.isNaN(a)
+  const draw90 = regValid && h === a
+  const decided = getKnockoutWinnerFromCell(homeTeam, awayTeam, p)
   const canEdit = Boolean(homeTeam && awayTeam)
+  const editable = canEdit && !locked
+  const inputCls =
+    'w-11 sm:w-12 rounded-lg border border-white/20 bg-black/30 p-1.5 sm:p-2 text-center text-sm disabled:opacity-40'
+
   return (
     <div className="rounded-2xl border border-[#2a6fb0]/40 bg-gradient-to-br from-[#0a2342]/90 to-[#051525]/95 p-4 text-left flex flex-col gap-2 shadow-lg shadow-black/30">
       <div className="flex justify-between items-start gap-2">
@@ -68,13 +50,85 @@ function MatchCard({
             <span className="text-sm font-semibold leading-snug">{awayLabel}</span>
           </div>
         </div>
-        <ScorePair
-          sKey={scoreKey}
-          scores={scores}
-          onPatch={onPatch}
-          locked={locked}
-          canEdit={canEdit}
-        />
+
+        <div className="flex flex-col items-center gap-1 shrink-0">
+          {draw90 ? (
+            <div className="flex items-center justify-center gap-2">
+              <input
+                type="number"
+                min="0"
+                inputMode="numeric"
+                disabled={!editable}
+                aria-label="Penaltis marcados por el local"
+                className={inputCls}
+                value={p.pensHome ?? ''}
+                onChange={e => onPatch(scoreKey, 'pensHome', e.target.value)}
+              />
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min="0"
+                  inputMode="numeric"
+                  disabled={!editable}
+                  aria-label="Goles local (90 min)"
+                  className={inputCls}
+                  value={p.home ?? ''}
+                  onChange={e => onPatch(scoreKey, 'home', e.target.value)}
+                />
+                <span className="text-white/50">-</span>
+                <input
+                  type="number"
+                  min="0"
+                  inputMode="numeric"
+                  disabled={!editable}
+                  aria-label="Goles visitante (90 min)"
+                  className={inputCls}
+                  value={p.away ?? ''}
+                  onChange={e => onPatch(scoreKey, 'away', e.target.value)}
+                />
+              </div>
+              <input
+                type="number"
+                min="0"
+                inputMode="numeric"
+                disabled={!editable}
+                aria-label="Penaltis marcados por el visitante"
+                className={inputCls}
+                value={p.pensAway ?? ''}
+                onChange={e => onPatch(scoreKey, 'pensAway', e.target.value)}
+              />
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number"
+                min="0"
+                inputMode="numeric"
+                disabled={!editable}
+                aria-label="Goles local (90 min)"
+                className={inputCls}
+                value={p.home ?? ''}
+                onChange={e => onPatch(scoreKey, 'home', e.target.value)}
+              />
+              <span className="text-white/50">-</span>
+              <input
+                type="number"
+                min="0"
+                inputMode="numeric"
+                disabled={!editable}
+                aria-label="Goles visitante (90 min)"
+                className={inputCls}
+                value={p.away ?? ''}
+                onChange={e => onPatch(scoreKey, 'away', e.target.value)}
+              />
+            </div>
+          )}
+          {draw90 ? (
+            <span className="text-[9px] text-sky-200/65 text-center max-w-[14rem] leading-tight">
+              Empate a 90&apos;: penaltis a izquierda y derecha
+            </span>
+          ) : null}
+        </div>
       </div>
       {!canEdit && (
         <p className="text-[10px] text-sky-200/60 m-0">Completa fases anteriores para habilitar marcador.</p>
@@ -90,8 +144,8 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
         Eliminatorias
       </h2>
       <p className="text-sm text-sky-100/75 mb-8 leading-relaxed">
-        Introduce marcadores en cada ronda (sin empates en 90&apos;). Los cruces posteriores se
-        rellenan con los ganadores. Fechas según calendario FIFA (Wikipedia / FIFA).
+        Marcador a 90 minutos. Si hay empate, aparecen dos celdas para la tanda de penaltis (goles anotados en
+        la serie). Los cruces posteriores usan el ganador definitivo.
       </p>
 
       <h3 className="font-bold text-amber-200/95 text-sm uppercase tracking-wide mb-3">

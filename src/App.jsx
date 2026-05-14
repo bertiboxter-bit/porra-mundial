@@ -1,15 +1,13 @@
 import { supabase } from './supabase'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Trophy, Star, Goal, Users, Save, Lock, FolderOpen, LogOut, Home, Swords, SlidersHorizontal } from 'lucide-react'
+import { Trophy, Star, Goal, Users, Save, Lock, FolderOpen, LogOut, Home, Swords, SlidersHorizontal, LayoutList, LayoutGrid } from 'lucide-react'
 import {
   GROUP_LETTERS,
-  GROUPS,
-  GROUP_STAGE_MATCHES,
-  calculateGroupTable,
   computeFullKnockout,
+  applyKnockoutScorePatch,
 } from './bracketLogic.js'
 import KnockoutSection from './KnockoutSection.jsx'
-import { TeamNameWithFlag } from './TeamFlag.jsx'
+import GroupPhaseCard from './GroupPhaseCard.jsx'
 import MessageModal from './MessageModal.jsx'
 import OfficialResultsPanel from './OfficialResultsPanel.jsx'
 import AdminLockModal from './AdminLockModal.jsx'
@@ -31,6 +29,9 @@ import {
 } from './userIdentity.js'
 
 const OFFICIAL_HASH = '#resultados-oficiales'
+
+const GROUP_VIEW_STORAGE_KEY = 'porra_mundial_group_view'
+const GROUP_TAB_STORAGE_KEY = 'porra_mundial_group_tab'
 
 async function fetchAllPredictions() {
   const { data, error } = await supabase.from('predictions').select('*')
@@ -120,6 +121,24 @@ export default function WorldCupPoolApp() {
 
   const [specials, setSpecials] = useState(() => mergeSpecials(null))
   const [sessionConnected, setSessionConnected] = useState(false)
+  const [groupViewMode, setGroupViewMode] = useState(() => {
+    if (typeof window === 'undefined') return 'list'
+    try {
+      return localStorage.getItem(GROUP_VIEW_STORAGE_KEY) === 'tabs' ? 'tabs' : 'list'
+    } catch {
+      return 'list'
+    }
+  })
+  const [activeGroupTab, setActiveGroupTab] = useState(() => {
+    if (typeof window === 'undefined') return 'A'
+    try {
+      const t = localStorage.getItem(GROUP_TAB_STORAGE_KEY)
+      if (t && GROUP_LETTERS.includes(t)) return t
+    } catch {
+      /* ignore */
+    }
+    return 'A'
+  })
 
   useEffect(() => {
     try {
@@ -129,6 +148,22 @@ export default function WorldCupPoolApp() {
       /* ignore */
     }
   }, [username])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(GROUP_VIEW_STORAGE_KEY, groupViewMode)
+    } catch {
+      /* ignore */
+    }
+  }, [groupViewMode])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(GROUP_TAB_STORAGE_KEY, activeGroupTab)
+    } catch {
+      /* ignore */
+    }
+  }, [activeGroupTab])
 
   useEffect(() => {
     const onHash = () =>
@@ -339,10 +374,7 @@ export default function WorldCupPoolApp() {
   )
 
   const patchKoScore = (key, side, val) => {
-    setKnockoutScores(prev => ({
-      ...prev,
-      [key]: { ...(prev[key] || {}), [side]: val },
-    }))
+    setKnockoutScores(prev => applyKnockoutScorePatch(prev, key, side, val))
   }
 
   if (panel === 'official') {
@@ -563,132 +595,95 @@ export default function WorldCupPoolApp() {
               id="section-grupos"
               className="scroll-mt-28 rounded-3xl border border-cyan-400/15 bg-slate-900/50 backdrop-blur-md shadow-xl p-6"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <Trophy className="text-amber-300" />
-                <h2 className="text-2xl font-bold text-white">Fase de grupos</h2>
-              </div>
-
-              <div className="space-y-8">
-                {GROUP_LETTERS.map(group => {
-                  const teams = GROUPS[group]
-                  const groupMatches = GROUP_STAGE_MATCHES.filter(m => m.group === group)
-
-                  const table = calculateGroupTable(predictions, teams, groupMatches)
-
-                  return (
-                    <div
-                      key={group}
-                      className="rounded-3xl border border-[#2a6fb0]/35 bg-gradient-to-br from-slate-900/80 to-[#061525]/90 p-5 shadow-lg"
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <Trophy className="text-amber-300" />
+                  <h2 className="text-2xl font-bold text-white m-0">Fase de grupos</h2>
+                </div>
+                <div
+                  className="flex flex-col gap-1.5 shrink-0"
+                  role="group"
+                  aria-label="Modo de visualización de grupos"
+                >
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-sky-300/75">
+                    Vista
+                  </span>
+                  <div className="inline-flex rounded-xl border border-white/15 bg-black/30 p-1 gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setGroupViewMode('list')}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs sm:text-sm font-semibold transition ${
+                        groupViewMode === 'list'
+                          ? 'bg-sky-500/35 text-white shadow-sm'
+                          : 'text-sky-200/80 hover:bg-white/10'
+                      }`}
                     >
-                      <div className="flex items-center justify-between mb-5">
-                        <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-sky-200">
-                          Grupo {group}
-                        </h3>
-                      </div>
-
-                      <div className="grid lg:grid-cols-2 gap-6">
-                        <div className="space-y-3">
-                          {groupMatches.map(match => (
-                            <div
-                              key={match.id}
-                              className="rounded-2xl border border-white/10 bg-black/25 p-3"
-                            >
-                              <div className="text-xs text-sky-200/80 mb-2 text-left space-y-0.5">
-                                <div>
-                                  <span className="font-bold text-amber-200/90">Jornada {match.matchday}</span>
-                                  <span className="text-white/50"> · </span>
-                                  <span>{match.dateLabel}</span>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
-                                <div className="flex justify-end min-w-0">
-                                  <TeamNameWithFlag
-                                    name={match.home}
-                                    textClassName="font-semibold text-white/95 text-sm text-right"
-                                  />
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    disabled={predictionsLockedGlobally}
-                                    className="w-14 rounded-lg border border-white/20 bg-slate-950/80 p-2 text-center text-white disabled:opacity-40"
-                                    value={predictions[match.id]?.home || ''}
-                                    onChange={e =>
-                                      setPredictions(prev => ({
-                                        ...prev,
-                                        [match.id]: {
-                                          ...prev[match.id],
-                                          home: e.target.value,
-                                        },
-                                      }))
-                                    }
-                                  />
-
-                                  <span className="text-white/40">-</span>
-
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    disabled={predictionsLockedGlobally}
-                                    className="w-14 rounded-lg border border-white/20 bg-slate-950/80 p-2 text-center text-white disabled:opacity-40"
-                                    value={predictions[match.id]?.away || ''}
-                                    onChange={e =>
-                                      setPredictions(prev => ({
-                                        ...prev,
-                                        [match.id]: {
-                                          ...prev[match.id],
-                                          away: e.target.value,
-                                        },
-                                      }))
-                                    }
-                                  />
-                                </div>
-
-                                <div className="flex justify-start min-w-0">
-                                  <TeamNameWithFlag
-                                    name={match.away}
-                                    textClassName="font-semibold text-white/95 text-sm"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div>
-                          <div className="overflow-hidden rounded-2xl border border-white/10">
-                            <table className="w-full text-sm">
-                              <thead className="bg-gradient-to-r from-[#c8102e] to-[#003875] text-white">
-                                <tr>
-                                  <th className="p-3 text-left">Equipo</th>
-                                  <th>PTS</th>
-                                  <th>DG</th>
-                                  <th>GF</th>
-                                </tr>
-                              </thead>
-
-                              <tbody className="bg-slate-950/60">
-                                {table.map(team => (
-                                  <tr key={team.team} className="border-t border-white/10">
-                                    <td className="p-3 font-medium text-white/90">
-                                      <TeamNameWithFlag name={team.team} />
-                                    </td>
-                                    <td className="text-center text-sky-100">{team.pts}</td>
-                                    <td className="text-center text-sky-100">{team.dg}</td>
-                                    <td className="text-center text-sky-100">{team.gf}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+                      <LayoutList size={16} className="opacity-90 shrink-0" aria-hidden />
+                      Lista
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGroupViewMode('tabs')}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs sm:text-sm font-semibold transition ${
+                        groupViewMode === 'tabs'
+                          ? 'bg-sky-500/35 text-white shadow-sm'
+                          : 'text-sky-200/80 hover:bg-white/10'
+                      }`}
+                    >
+                      <LayoutGrid size={16} className="opacity-90 shrink-0" aria-hidden />
+                      Pestañas
+                    </button>
+                  </div>
+                </div>
               </div>
+
+              {groupViewMode === 'tabs' ? (
+                <div
+                  className="flex flex-wrap gap-1 mb-4 -mx-0.5 px-0.5 pb-2 border-b border-white/10 overflow-x-auto"
+                  role="tablist"
+                  aria-label="Seleccionar grupo"
+                >
+                  {GROUP_LETTERS.map(letter => (
+                    <button
+                      key={letter}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeGroupTab === letter}
+                      onClick={() => setActiveGroupTab(letter)}
+                      className={`shrink-0 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-bold transition min-w-[2.25rem] ${
+                        activeGroupTab === letter
+                          ? 'bg-amber-400/25 text-amber-100 ring-1 ring-amber-400/45'
+                          : 'text-sky-200/85 hover:bg-white/10'
+                      }`}
+                    >
+                      {letter}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {groupViewMode === 'list' ? (
+                <div className="space-y-8">
+                  {GROUP_LETTERS.map(group => (
+                    <GroupPhaseCard
+                      key={group}
+                      group={group}
+                      predictions={predictions}
+                      setPredictions={setPredictions}
+                      predictionsLockedGlobally={predictionsLockedGlobally}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div role="tabpanel" aria-label={`Grupo ${activeGroupTab}`}>
+                  <GroupPhaseCard
+                    group={activeGroupTab}
+                    predictions={predictions}
+                    setPredictions={setPredictions}
+                    predictionsLockedGlobally={predictionsLockedGlobally}
+                  />
+                </div>
+              )}
             </div>
 
             <div id="section-knockout" className="scroll-mt-28">
@@ -855,7 +850,7 @@ export default function WorldCupPoolApp() {
               </div>
 
               <div className="space-y-3 text-sm text-sky-100/80">
-                <div>Resultado exacto (grupos y KO): +3 pts</div>
+                <div>Resultado exacto (grupos y KO, con penaltis si hubo empate a 90&apos;): +3 pts</div>
                 <div>Ganador o empate acertado: +1 pt</div>
                 <div>Clasificado en su posición de grupo: +2 pts</div>
                 <div>Campeón acertado: +10 pts · Subcampeón: +5 · 3.er puesto: +4</div>

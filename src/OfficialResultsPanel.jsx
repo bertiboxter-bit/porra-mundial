@@ -6,6 +6,7 @@ import {
   GROUP_STAGE_MATCHES,
   calculateGroupTable,
   computeFullKnockout,
+  applyKnockoutScorePatch,
 } from './bracketLogic.js'
 import KnockoutSection from './KnockoutSection.jsx'
 import { TeamNameWithFlag } from './TeamFlag.jsx'
@@ -67,10 +68,7 @@ export default function OfficialResultsPanel({ onBack }) {
   )
 
   const patchKoScore = (key, side, val) => {
-    setKnockoutScores(prev => ({
-      ...prev,
-      [key]: { ...(prev[key] || {}), [side]: val },
-    }))
+    setKnockoutScores(prev => applyKnockoutScorePatch(prev, key, side, val))
   }
 
   const handleSave = async () => {
