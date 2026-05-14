@@ -850,7 +850,10 @@ export default function WorldCupPoolApp() {
               </div>
 
               <div className="space-y-3 text-sm text-sky-100/80">
-                <div>Resultado exacto (grupos y KO, con penaltis si hubo empate a 90&apos;): +3 pts</div>
+                <div>
+                  Resultado exacto (grupos y KO, con penaltis si hubo empate tras 90&apos; o 120&apos;, incl.
+                  prórroga): +3 pts
+                </div>
                 <div>Ganador o empate acertado: +1 pt</div>
                 <div>Clasificado en su posición de grupo: +2 pts</div>
                 <div>Campeón acertado: +10 pts · Subcampeón: +5 · 3.er puesto: +4</div>

@@ -46,7 +46,7 @@ function pensEqual(c1, c2) {
   return a === c && b === d
 }
 
-/** Marcador 90' igual y misma tanda de penaltis (si aplica). */
+/** Marcador tras tiempo reglamentario (90' o 120' con prórroga) igual y misma tanda de penaltis (si aplica). */
 function koElimExactMatch(oCell, uCell) {
   const os = parseScoreCell(oCell)
   const us = parseScoreCell(uCell)

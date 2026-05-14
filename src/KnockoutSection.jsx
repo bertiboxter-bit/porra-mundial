@@ -70,7 +70,7 @@ function MatchCard({
                   min="0"
                   inputMode="numeric"
                   disabled={!editable}
-                  aria-label="Goles local (90 min)"
+                  aria-label="Goles local (90' o 120', incl. prórroga)"
                   className={inputCls}
                   value={p.home ?? ''}
                   onChange={e => onPatch(scoreKey, 'home', e.target.value)}
@@ -81,7 +81,7 @@ function MatchCard({
                   min="0"
                   inputMode="numeric"
                   disabled={!editable}
-                  aria-label="Goles visitante (90 min)"
+                  aria-label="Goles visitante (90' o 120', incl. prórroga)"
                   className={inputCls}
                   value={p.away ?? ''}
                   onChange={e => onPatch(scoreKey, 'away', e.target.value)}
@@ -105,7 +105,7 @@ function MatchCard({
                 min="0"
                 inputMode="numeric"
                 disabled={!editable}
-                aria-label="Goles local (90 min)"
+                aria-label="Goles local (90' o 120', incl. prórroga)"
                 className={inputCls}
                 value={p.home ?? ''}
                 onChange={e => onPatch(scoreKey, 'home', e.target.value)}
@@ -116,7 +116,7 @@ function MatchCard({
                 min="0"
                 inputMode="numeric"
                 disabled={!editable}
-                aria-label="Goles visitante (90 min)"
+                aria-label="Goles visitante (90' o 120', incl. prórroga)"
                 className={inputCls}
                 value={p.away ?? ''}
                 onChange={e => onPatch(scoreKey, 'away', e.target.value)}
@@ -125,7 +125,7 @@ function MatchCard({
           )}
           {draw90 ? (
             <span className="text-[9px] text-sky-200/65 text-center max-w-[14rem] leading-tight">
-              Empate a 90&apos;: penaltis a izquierda y derecha
+              Empate tras 90&apos; o 120&apos; (incl. prórroga): penaltis a izquierda y derecha
             </span>
           ) : null}
         </div>
@@ -144,8 +144,9 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
         Eliminatorias
       </h2>
       <p className="text-sm text-sky-100/75 mb-8 leading-relaxed">
-        Marcador a 90 minutos. Si hay empate, aparecen dos celdas para la tanda de penaltis (goles anotados en
-        la serie). Los cruces posteriores usan el ganador definitivo.
+        Marcador al final del tiempo reglamentario (90 o 120 minutos, incluida la prórroga si hubo). Si hay
+        empate, aparecen dos celdas para la tanda de penaltis (goles anotados en la serie). Los cruces posteriores
+        usan el ganador definitivo.
       </p>
 
       <h3 className="font-bold text-amber-200/95 text-sm uppercase tracking-wide mb-3">

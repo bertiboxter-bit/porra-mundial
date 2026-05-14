@@ -152,7 +152,7 @@ export function buildRoundOf32Teams(predictions) {
 }
 
 /**
- * Ganador del cruce: 90' o, si empate, tanda de penaltis (`pensHome` / `pensAway`).
+ * Ganador del cruce: marcador tras 90' o 120' (incl. prórroga); si empate, tanda de penaltis (`pensHome` / `pensAway`).
  * @param {string | null} homeTeam
  * @param {string | null} awayTeam
  * @param {{ home?: string|number, away?: string|number, pensHome?: string|number, pensAway?: string|number }|null|undefined} cell
