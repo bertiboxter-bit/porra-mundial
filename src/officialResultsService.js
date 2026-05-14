@@ -1,16 +1,9 @@
 import { supabase } from './supabase'
 import { computeFullKnockout } from './bracketLogic.js'
 import { scorePredictionRow } from './scoring.js'
+import { mergeSpecials } from './porraSpecials.js'
 
 const OFFICIAL_ID = 'default'
-
-const defaultSpecials = () => ({
-  champion: '',
-  runnerUp: '',
-  topScorer: '',
-  bestPlayer: '',
-  topAssist: '',
-})
 
 export async function fetchOfficialState() {
   const { data, error } = await supabase.from('official_state').select('*').eq('id', OFFICIAL_ID).maybeSingle()
@@ -22,7 +15,7 @@ export async function fetchOfficialState() {
   return {
     predictions: typeof data.predictions === 'object' && data.predictions ? data.predictions : {},
     knockout: typeof data.knockout === 'object' && data.knockout ? data.knockout : {},
-    specials: { ...defaultSpecials(), ...(typeof data.specials === 'object' && data.specials ? data.specials : {}) },
+    specials: mergeSpecials(data.specials),
     updatedAt: data.updated_at ?? data.updatedAt,
     predictionsLocked: Boolean(data.predictions_locked),
   }
@@ -59,7 +52,7 @@ export async function saveOfficialAndRecalculatePoints({ predictions, knockout, 
     id: OFFICIAL_ID,
     predictions: predictions ?? {},
     knockout: knockout ?? {},
-    specials: specials ?? {},
+    specials: mergeSpecials(specials ?? {}),
     updated_at: new Date().toISOString(),
   }
 

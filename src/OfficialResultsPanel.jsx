@@ -11,19 +11,12 @@ import KnockoutSection from './KnockoutSection.jsx'
 import { TeamNameWithFlag } from './TeamFlag.jsx'
 import MessageModal from './MessageModal.jsx'
 import { fetchOfficialState, saveOfficialAndRecalculatePoints } from './officialResultsService.js'
-
-const defaultSpecials = () => ({
-  champion: '',
-  runnerUp: '',
-  topScorer: '',
-  bestPlayer: '',
-  topAssist: '',
-})
+import { mergeSpecials } from './porraSpecials.js'
 
 export default function OfficialResultsPanel({ onBack }) {
   const [predictions, setPredictions] = useState({})
   const [knockoutScores, setKnockoutScores] = useState({})
-  const [specials, setSpecials] = useState(defaultSpecials)
+  const [specials, setSpecials] = useState(() => mergeSpecials(null))
   const [loadBusy, setLoadBusy] = useState(true)
   const [saveBusy, setSaveBusy] = useState(false)
   const [modal, setModal] = useState(null)
@@ -47,7 +40,7 @@ export default function OfficialResultsPanel({ onBack }) {
         if (st) {
           setPredictions(st.predictions || {})
           setKnockoutScores(st.knockout || {})
-          setSpecials({ ...defaultSpecials(), ...(st.specials || {}) })
+          setSpecials(mergeSpecials(st.specials))
         }
       } catch (e) {
         console.error(e)
@@ -258,24 +251,57 @@ export default function OfficialResultsPanel({ onBack }) {
             <div className="rounded-3xl border border-amber-400/20 bg-slate-900/60 p-6">
               <h2 className="text-xl font-bold text-white mb-2">Premios oficiales (texto libre)</h2>
               <p className="text-sm text-slate-400 mb-4 m-0">
-                Deben coincidir con lo que escriban los usuarios (sin distinguir mayúsculas). Campeón y
-                subcampeón también se deducen de la final si el marcador está puesto.
+                Misma ortografía que usen los participantes (sin distinguir mayúsculas). Campeón, subcampeón
+                y 3.er puesto se validan también contra la final y el partido de tercer puesto si hay
+                marcadores. Pichichi y mejor jugador: rellena 1º, 2º y 3º puesto para puntuar el podio.
               </p>
-              <div className="grid md:grid-cols-2 gap-4">
-                {[
-                  ['topScorer', 'Pichichi'],
-                  ['bestPlayer', 'Mejor jugador'],
-                  ['topAssist', 'Máximo asistente'],
-                ].map(([key, label]) => (
-                  <label key={key} className="block text-sm text-sky-200/90">
-                    {label}
-                    <input
-                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-3 text-white"
-                      value={specials[key] || ''}
-                      onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
-                    />
-                  </label>
-                ))}
+              <div className="space-y-5">
+                <div>
+                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0">Pichichi / goleador</h3>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    {[
+                      ['topScorer', '1.er puesto'],
+                      ['topScorer2', '2.º puesto'],
+                      ['topScorer3', '3.er puesto'],
+                    ].map(([key, label]) => (
+                      <label key={key} className="block text-xs text-sky-200/90">
+                        {label}
+                        <input
+                          className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-2.5 text-sm text-white"
+                          value={specials[key] || ''}
+                          onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0">Mejor jugador</h3>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    {[
+                      ['bestPlayer', '1.er puesto'],
+                      ['bestPlayer2', '2.º puesto'],
+                      ['bestPlayer3', '3.er puesto'],
+                    ].map(([key, label]) => (
+                      <label key={key} className="block text-xs text-sky-200/90">
+                        {label}
+                        <input
+                          className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-2.5 text-sm text-white"
+                          value={specials[key] || ''}
+                          onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <label className="block text-sm text-sky-200/90 max-w-md">
+                  Máximo asistente
+                  <input
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-3 text-white"
+                    value={specials.topAssist || ''}
+                    onChange={e => setSpecials(prev => ({ ...prev, topAssist: e.target.value }))}
+                  />
+                </label>
               </div>
             </div>
           </>

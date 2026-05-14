@@ -7,6 +7,7 @@ import {
   getKnockoutLoser,
   getKnockoutWinner,
 } from './bracketLogic.js'
+import { mergeSpecials } from './porraSpecials.js'
 
 function norm(s) {
   return String(s ?? '')
@@ -56,6 +57,31 @@ function knockoutPhaseLabel(scoreKey) {
   return 'Eliminatorias'
 }
 
+const PODIUM_WEIGHTS = [5, 3, 2]
+
+/**
+ * @param {{ matchLabel: string, points: number, reason: string }[]} lines
+ * @param {Record<string, string>} mergedUser
+ * @param {Record<string, string>} mergedOfficial
+ * @param {[string, string, string]} keys
+ * @param {string} labelBase
+ */
+function pushPodiumTriplet(lines, mergedUser, mergedOfficial, keys, labelBase) {
+  for (let i = 0; i < 3; i++) {
+    const o = norm(mergedOfficial[keys[i]] || '')
+    const u = norm(mergedUser[keys[i]] || '')
+    if (!o) continue
+    if (!u || u !== o) continue
+    const w = PODIUM_WEIGHTS[i] ?? 2
+    const shown = String(mergedOfficial[keys[i]] || '').trim()
+    lines.push({
+      matchLabel: `${labelBase} (${i + 1}º)`,
+      points: w,
+      reason: `Acertaste el ${i + 1}º puesto oficial: «${shown}».`,
+    })
+  }
+}
+
 /**
  * @param {ReturnType<typeof computeFullKnockout>} bracket
  * @param {string} scoreKey
@@ -98,9 +124,8 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
   const pred =
     userRow.predictions && typeof userRow.predictions === 'object' ? userRow.predictions : {}
   const ko = userRow.knockout && typeof userRow.knockout === 'object' ? userRow.knockout : {}
-  const spec = userRow.specials && typeof userRow.specials === 'object' ? userRow.specials : {}
-  const ospec =
-    officialSpecials && typeof officialSpecials === 'object' ? officialSpecials : {}
+  const spec = mergeSpecials(userRow.specials)
+  const ospec = mergeSpecials(officialSpecials)
 
   for (const m of GROUP_STAGE_MATCHES) {
     const op = parseScoreCell(pickPred(officialPred, m.id))
@@ -175,38 +200,47 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
   const fh = officialBracket?.final?.homeTeam
   const fa = officialBracket?.final?.awayTeam
   if (fh && fa && fin) {
-    const champ = getKnockoutWinner(fh, fa, fin.home, fin.away)
-    const runner = getKnockoutLoser(fh, fa, fin.home, fin.away)
-    if (champ && norm(spec.champion) === norm(champ)) {
-      lines.push({
-        matchLabel: 'Predicción especial · Campeón',
-        points: 10,
-        reason: `Acertaste al campeón: «${champ}».`,
-      })
-    }
-    if (runner && norm(spec.runnerUp) === norm(runner)) {
-      lines.push({
-        matchLabel: 'Predicción especial · Subcampeón',
-        points: 5,
-        reason: `Acertaste al subcampeón: «${runner}».`,
-      })
+    const finCell = parseScoreCell(fin)
+    if (finCell && finCell.h !== finCell.a) {
+      const champ = getKnockoutWinner(fh, fa, finCell.h, finCell.a)
+      const runner = getKnockoutLoser(fh, fa, finCell.h, finCell.a)
+      if (champ && norm(spec.champion) === norm(champ)) {
+        lines.push({
+          matchLabel: 'Predicción especial · Campeón',
+          points: 10,
+          reason: `Acertaste al campeón: «${champ}».`,
+        })
+      }
+      if (runner && norm(spec.runnerUp) === norm(runner)) {
+        lines.push({
+          matchLabel: 'Predicción especial · Subcampeón',
+          points: 5,
+          reason: `Acertaste al subcampeón: «${runner}».`,
+        })
+      }
     }
   }
 
-  if (ospec.topScorer && norm(spec.topScorer) === norm(ospec.topScorer)) {
-    lines.push({
-      matchLabel: 'Predicción especial · Máximo goleador',
-      points: 5,
-      reason: `Coincide con el máximo goleador oficial: «${ospec.topScorer}».`,
-    })
+  const tpKo = officialKo['tp-103']
+  const th = officialBracket?.thirdPlace?.homeTeam
+  const ta = officialBracket?.thirdPlace?.awayTeam
+  if (th && ta && tpKo) {
+    const tpCell = parseScoreCell(tpKo)
+    if (tpCell && tpCell.h !== tpCell.a) {
+      const third = getKnockoutWinner(th, ta, tpCell.h, tpCell.a)
+      if (third && norm(spec.thirdPlace) === norm(third)) {
+        lines.push({
+          matchLabel: 'Predicción especial · 3.er puesto',
+          points: 4,
+          reason: `Acertaste el equipo del tercer puesto: «${third}».`,
+        })
+      }
+    }
   }
-  if (ospec.bestPlayer && norm(spec.bestPlayer) === norm(ospec.bestPlayer)) {
-    lines.push({
-      matchLabel: 'Predicción especial · Mejor jugador',
-      points: 5,
-      reason: `Coincide con el mejor jugador oficial: «${ospec.bestPlayer}».`,
-    })
-  }
+
+  pushPodiumTriplet(lines, spec, ospec, ['topScorer', 'topScorer2', 'topScorer3'], 'Pichichi / goleador')
+  pushPodiumTriplet(lines, spec, ospec, ['bestPlayer', 'bestPlayer2', 'bestPlayer3'], 'Mejor jugador')
+
   if (ospec.topAssist && norm(spec.topAssist) === norm(ospec.topAssist)) {
     lines.push({
       matchLabel: 'Predicción especial · Máximo asistente',
@@ -221,11 +255,6 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
 
 /**
  * Puntos de un participante frente a resultados oficiales.
- * @param {{ predictions?: object, knockout?: object, specials?: object }} userRow
- * @param {Record<string, { home?: string, away?: string }>} officialPred
- * @param {Record<string, { home?: string, away?: string }>} officialKo
- * @param {ReturnType<typeof computeFullKnockout>} officialBracket
- * @param {Record<string, string>} officialSpecials
  */
 export function scorePredictionRow(userRow, officialPred, officialKo, officialBracket, officialSpecials) {
   return getScoreBreakdown(userRow, officialPred, officialKo, officialBracket, officialSpecials).total

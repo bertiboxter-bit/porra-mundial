@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Trophy, Star, Goal, Users, Save, Lock, FolderOpen, LogOut } from 'lucide-react'
+import { Trophy, Star, Goal, Users, Save, Lock, FolderOpen, LogOut, Home, Swords, SlidersHorizontal } from 'lucide-react'
 import {
   GROUP_LETTERS,
   GROUPS,
@@ -20,6 +20,7 @@ import {
   setPredictionsGloballyLocked,
 } from './officialResultsService.js'
 import { getScoreBreakdown } from './scoring.js'
+import { defaultSpecials, mergeSpecials } from './porraSpecials.js'
 import {
   USERNAME_STORAGE_KEY,
   normalizeUsername,
@@ -43,14 +44,6 @@ async function fetchAllPredictions() {
     updatedAt: row.updatedAt ?? row.updated_at ?? new Date().toISOString(),
   }))
 }
-
-const defaultSpecials = () => ({
-  champion: '',
-  runnerUp: '',
-  topScorer: '',
-  bestPlayer: '',
-  topAssist: '',
-})
 
 export default function WorldCupPoolApp() {
   const [panel, setPanel] = useState(() =>
@@ -115,13 +108,17 @@ export default function WorldCupPoolApp() {
     })
   }, [])
 
+  const scrollToSection = useCallback(id => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
+
   const [predictionsLockedGlobally, setPredictionsLockedGlobally] = useState(false)
   const [lockModalMode, setLockModalMode] = useState(null)
 
   const [predictions, setPredictions] = useState({})
   const [knockoutScores, setKnockoutScores] = useState({})
 
-  const [specials, setSpecials] = useState(defaultSpecials)
+  const [specials, setSpecials] = useState(() => mergeSpecials(null))
   const [sessionConnected, setSessionConnected] = useState(false)
 
   useEffect(() => {
@@ -193,6 +190,24 @@ export default function WorldCupPoolApp() {
       return
     }
 
+    const displayKey = d.toLowerCase()
+    const displayTaken = savedUsers.some(row => {
+      const rowUser = normalizeUsername(String(row.username ?? ''))
+      if (rowUser === u) return false
+      const pub = String(row.display_name ?? row.displayName ?? row.nickname ?? '')
+        .trim()
+        .toLowerCase()
+      return pub === displayKey
+    })
+    if (displayTaken) {
+      showModal({
+        variant: 'error',
+        title: 'Nombre en uso',
+        message:
+          'Ya hay otro participante con ese nombre en la clasificación (no se distingue mayúsculas). Elige otro nombre público.',
+      })
+      return
+    }
     try {
       const { data: prior } = await supabase.from('predictions').select('points').eq('username', u).maybeSingle()
       const { error } = await supabase.from('predictions').upsert(
@@ -202,7 +217,7 @@ export default function WorldCupPoolApp() {
           nickname: d,
           predictions,
           knockout: knockoutScores,
-          specials,
+          specials: mergeSpecials(specials),
           points: prior?.points ?? 0,
           updated_at: new Date().toISOString(),
         },
@@ -221,12 +236,20 @@ export default function WorldCupPoolApp() {
         title: 'Porra guardada',
         message: 'Los datos se han guardado correctamente en la base de datos.',
       })
-    } catch {
+    } catch (e) {
+      console.error(e)
+      const msg = String(e?.message || '')
+      const code = e?.code
+      const dup =
+        code === '23505' ||
+        /unique|duplicate/i.test(msg) ||
+        /display_name/i.test(msg)
       showModal({
         variant: 'error',
         title: 'No se pudo guardar',
-        message:
-          'Revisa la conexión y los permisos. Si el error habla de UNIQUE o usuario duplicado, elige otro usuario (clave privada) o aplica el script predictions-username-display.sql del repositorio si aún no migraste la tabla.',
+        message: dup
+          ? 'Ese nombre público o usuario ya está registrado (restricción única en base de datos). Elige otro nombre en la clasificación u otro usuario privado. Si falta el índice, ejecuta supabase/predictions-display-name-unique.sql.'
+          : 'Revisa la conexión y los permisos. Si el error habla de UNIQUE o usuario duplicado, elige otro usuario (clave privada) o aplica el script predictions-username-display.sql del repositorio si aún no migraste la tabla.',
       })
     }
   }
@@ -283,7 +306,7 @@ export default function WorldCupPoolApp() {
       setKnockoutScores(
         data.knockout && typeof data.knockout === 'object' ? data.knockout : {},
       )
-      setSpecials({ ...defaultSpecials(), ...(typeof data.specials === 'object' && data.specials ? data.specials : {}) })
+      setSpecials(mergeSpecials(data.specials))
       setSessionConnected(true)
     } finally {
       setLoadBusy(false)
@@ -333,9 +356,39 @@ export default function WorldCupPoolApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#050d1a] via-[#0a2342] to-[#1a0a28] p-4 md:p-8 text-slate-100">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="relative overflow-hidden rounded-3xl border border-amber-400/25 bg-gradient-to-r from-[#003875]/95 via-[#005a9c]/90 to-[#002a52]/95 p-8 shadow-2xl shadow-black/50">
+    <div className="min-h-screen bg-gradient-to-br from-[#050d1a] via-[#0a2342] to-[#1a0a28] text-slate-100 scroll-smooth">
+      <nav
+        className="fixed top-0 left-0 right-0 z-[90] border-b border-white/10 bg-[#060d18]/92 backdrop-blur-md shadow-md shadow-black/30"
+        aria-label="Secciones de la porra"
+      >
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center sm:justify-start gap-1 sm:gap-2 px-3 py-2">
+          {[
+            ['section-inicio', Home, 'Inicio'],
+            ['section-grupos', Trophy, 'Grupos'],
+            ['section-knockout', Swords, 'Eliminatorias'],
+            ['section-specials', Star, 'Especiales'],
+            ['section-ranking', Users, 'Clasificación'],
+            ['section-admin', SlidersHorizontal, 'Admin'],
+          ].map(([id, Icon, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => scrollToSection(id)}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-sky-100 hover:bg-white/10 transition"
+            >
+              <Icon size={16} className="opacity-90 shrink-0" aria-hidden />
+              {label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <div className="pt-[3.35rem] sm:pt-14 px-4 md:p-8 pb-10">
+        <div className="max-w-7xl mx-auto space-y-6">
+        <div
+          id="section-inicio"
+          className="scroll-mt-28 relative overflow-hidden rounded-3xl border border-amber-400/25 bg-gradient-to-r from-[#003875]/95 via-[#005a9c]/90 to-[#002a52]/95 p-8 shadow-2xl shadow-black/50"
+        >
           <div
             className="pointer-events-none absolute inset-0 opacity-30"
             style={{
@@ -461,7 +514,8 @@ export default function WorldCupPoolApp() {
                     className="w-full rounded-xl border border-white/20 bg-white/95 p-3 text-slate-900"
                   />
                   <p className="text-[11px] text-sky-200/65 mt-1 mb-3 leading-snug m-0">
-                    Así te verán el resto en el ranking; puede repetirse entre distintos usuarios.
+                    Debe ser único entre todos los participantes (no se distingue mayúsculas). El usuario privado
+                    también es único.
                   </p>
 
                   <div className="mt-1 flex flex-col gap-2">
@@ -505,7 +559,10 @@ export default function WorldCupPoolApp() {
 
         <div className="grid xl:grid-cols-3 gap-6">
           <div className="xl:col-span-2 space-y-6">
-            <div className="rounded-3xl border border-cyan-400/15 bg-slate-900/50 backdrop-blur-md shadow-xl p-6">
+            <div
+              id="section-grupos"
+              className="scroll-mt-28 rounded-3xl border border-cyan-400/15 bg-slate-900/50 backdrop-blur-md shadow-xl p-6"
+            >
               <div className="flex items-center gap-3 mb-6">
                 <Trophy className="text-amber-300" />
                 <h2 className="text-2xl font-bold text-white">Fase de grupos</h2>
@@ -634,99 +691,124 @@ export default function WorldCupPoolApp() {
               </div>
             </div>
 
-            <KnockoutSection
-              bracket={fullBracket}
-              knockoutScores={knockoutScores}
-              onPatch={patchKoScore}
-              locked={predictionsLockedGlobally}
-            />
+            <div id="section-knockout" className="scroll-mt-28">
+              <KnockoutSection
+                bracket={fullBracket}
+                knockoutScores={knockoutScores}
+                onPatch={patchKoScore}
+                locked={predictionsLockedGlobally}
+              />
+            </div>
 
-            <div className="rounded-3xl border border-cyan-400/15 bg-slate-900/50 backdrop-blur-md shadow-xl p-6">
+            <div
+              id="section-specials"
+              className="scroll-mt-28 rounded-3xl border border-cyan-400/15 bg-slate-900/50 backdrop-blur-md shadow-xl p-6"
+            >
               <div className="flex items-center gap-3 mb-6">
                 <Star className="text-amber-300" />
                 <h2 className="text-2xl font-bold text-white">Predicciones especiales</h2>
               </div>
 
-              <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-4">
-                <input
-                  disabled={predictionsLockedGlobally}
-                  className="rounded-2xl border border-white/15 bg-black/30 p-4 text-white placeholder:text-slate-500 disabled:opacity-40"
-                  placeholder="Campeón"
-                  value={specials.champion}
-                  onChange={e =>
-                    setSpecials(prev => ({
-                      ...prev,
-                      champion: e.target.value,
-                    }))
-                  }
-                />
+              <p className="text-sm text-sky-200/75 mb-4 m-0 leading-relaxed">
+                Escribe los nombres como en el panel de resultados oficiales (sin distinguir mayúsculas). El
+                campeón, subcampeón y 3.er puesto se comparan con la final y el partido de tercer puesto cuando
+                existan marcadores oficiales.
+              </p>
 
-                <input
-                  disabled={predictionsLockedGlobally}
-                  className="rounded-2xl border border-white/15 bg-black/30 p-4 text-white placeholder:text-slate-500 disabled:opacity-40"
-                  placeholder="Subcampeón"
-                  value={specials.runnerUp}
-                  onChange={e =>
-                    setSpecials(prev => ({
-                      ...prev,
-                      runnerUp: e.target.value,
-                    }))
-                  }
-                />
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0">Podio (equipos)</h3>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    {[
+                      ['champion', 'Campeón'],
+                      ['runnerUp', 'Subcampeón'],
+                      ['thirdPlace', '3.er puesto'],
+                    ].map(([key, label]) => (
+                      <label key={key} className="block text-xs text-sky-200/90">
+                        {label}
+                        <input
+                          disabled={predictionsLockedGlobally}
+                          className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-sm text-white placeholder:text-slate-500 disabled:opacity-40"
+                          placeholder="Equipo"
+                          value={specials[key] || ''}
+                          onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
-                <input
-                  disabled={predictionsLockedGlobally}
-                  className="rounded-2xl border border-white/15 bg-black/30 p-4 text-white placeholder:text-slate-500 disabled:opacity-40"
-                  placeholder="Máximo goleador"
-                  value={specials.topScorer}
-                  onChange={e =>
-                    setSpecials(prev => ({
-                      ...prev,
-                      topScorer: e.target.value,
-                    }))
-                  }
-                />
+                <div>
+                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0">Pichichi / goleador</h3>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    {[
+                      ['topScorer', '1.er puesto'],
+                      ['topScorer2', '2.º puesto'],
+                      ['topScorer3', '3.er puesto'],
+                    ].map(([key, label]) => (
+                      <label key={key} className="block text-xs text-sky-200/90">
+                        {label}
+                        <input
+                          disabled={predictionsLockedGlobally}
+                          className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-sm text-white placeholder:text-slate-500 disabled:opacity-40"
+                          placeholder="Jugador"
+                          value={specials[key] || ''}
+                          onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
-                <input
-                  disabled={predictionsLockedGlobally}
-                  className="rounded-2xl border border-white/15 bg-black/30 p-4 text-white placeholder:text-slate-500 disabled:opacity-40"
-                  placeholder="Mejor jugador"
-                  value={specials.bestPlayer}
-                  onChange={e =>
-                    setSpecials(prev => ({
-                      ...prev,
-                      bestPlayer: e.target.value,
-                    }))
-                  }
-                />
+                <div>
+                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0">Mejor jugador</h3>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    {[
+                      ['bestPlayer', '1.er puesto'],
+                      ['bestPlayer2', '2.º puesto'],
+                      ['bestPlayer3', '3.er puesto'],
+                    ].map(([key, label]) => (
+                      <label key={key} className="block text-xs text-sky-200/90">
+                        {label}
+                        <input
+                          disabled={predictionsLockedGlobally}
+                          className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-sm text-white placeholder:text-slate-500 disabled:opacity-40"
+                          placeholder="Jugador"
+                          value={specials[key] || ''}
+                          onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
-                <input
-                  disabled={predictionsLockedGlobally}
-                  className="rounded-2xl border border-white/15 bg-black/30 p-4 text-white placeholder:text-slate-500 disabled:opacity-40"
-                  placeholder="Máximo asistente"
-                  value={specials.topAssist}
-                  onChange={e =>
-                    setSpecials(prev => ({
-                      ...prev,
-                      topAssist: e.target.value,
-                    }))
-                  }
-                />
+                <label className="block text-sm text-sky-200/90 max-w-md">
+                  Máximo asistente
+                  <input
+                    disabled={predictionsLockedGlobally}
+                    className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-white placeholder:text-slate-500 disabled:opacity-40"
+                    placeholder="Jugador"
+                    value={specials.topAssist || ''}
+                    onChange={e => setSpecials(prev => ({ ...prev, topAssist: e.target.value }))}
+                  />
+                </label>
               </div>
             </div>
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-3xl border border-cyan-400/15 bg-slate-900/55 backdrop-blur-md p-6 sticky top-4 shadow-xl">
+            <div
+              id="section-ranking"
+              className="scroll-mt-28 rounded-3xl border border-cyan-400/15 bg-slate-900/55 backdrop-blur-md p-6 shadow-xl lg:sticky lg:top-20"
+            >
               <div className="flex items-center gap-3 mb-4">
                 <Users className="text-amber-300" />
                 <h2 className="text-2xl font-bold text-white">Clasificación global</h2>
               </div>
               <p className="text-xs text-sky-200/70 mb-4 leading-snug m-0">
-                Orden por puntos tras usar el panel de resultados oficiales (enlace arriba) y pulsar
-                «Guardar y recalcular puntos». Si todos tienen 0, nadie ha guardado aún resultados oficiales o
-                no hay coincidencias con los pronósticos. Pulsa sobre la cifra de puntos de un participante para
-                ver el desglose (partido, puntos y motivo).
+                Orden por puntos tras usar el panel de resultados oficiales (enlace en Inicio) y pulsar «Guardar
+                y recalcular puntos». El nombre en la clasificación es único entre participantes. Pulsa sobre la
+                cifra de puntos para ver el desglose.
               </p>
 
               <div className="space-y-3">
@@ -773,16 +855,20 @@ export default function WorldCupPoolApp() {
               </div>
 
               <div className="space-y-3 text-sm text-sky-100/80">
-                <div>Resultado exacto: +3 pts</div>
-                <div>Ganador acertado: +1 pt</div>
-                <div>Clasificado correcto: +2 pts</div>
-                <div>Finalista correcto: +5 pts</div>
-                <div>Campeón correcto: +10 pts</div>
-                <div>Premios individuales: +5 pts</div>
+                <div>Resultado exacto (grupos y KO): +3 pts</div>
+                <div>Ganador o empate acertado: +1 pt</div>
+                <div>Clasificado en su posición de grupo: +2 pts</div>
+                <div>Campeón acertado: +10 pts · Subcampeón: +5 · 3.er puesto: +4</div>
+                <div>Pichichi / goleador 1.º / 2.º / 3.º: +5 / +3 / +2 pts</div>
+                <div>Mejor jugador 1.º / 2.º / 3.º: +5 / +3 / +2 pts</div>
+                <div>Máximo asistente: +5 pts</div>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6">
+            <div
+              id="section-admin"
+              className="scroll-mt-28 rounded-3xl border border-white/10 bg-slate-900/60 p-6"
+            >
               <h2 className="text-xl font-bold text-white mb-4">Panel administrador</h2>
 
               <button
@@ -795,6 +881,7 @@ export default function WorldCupPoolApp() {
             </div>
           </div>
         </div>
+      </div>
       </div>
       <PointsBreakdownModal state={pointsBreakdown} onClose={closePointsBreakdown} />
       <MessageModal modal={modal} onClose={closeModal} />
