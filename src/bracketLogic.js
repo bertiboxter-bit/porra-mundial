@@ -4,6 +4,7 @@ import {
   GROUP_STAGE_MATCHES,
   ROUND_OF_32,
 } from './worldCup2026Data.js'
+import { THIRD_ASSIGNMENT_BY_QUALIFIED_GROUPS } from './thirdPlaceAnnexC.js'
 import {
   FINAL_MATCH,
   QF_BRACKET,
@@ -176,6 +177,7 @@ function allThirdPlaces(predictions) {
     if (b.pts !== a.pts) return b.pts - a.pts
     if (b.dg !== a.dg) return b.dg - a.dg
     if (b.gf !== a.gf) return b.gf - a.gf
+    // FIFA: fair play, clasificación mundial y sorteo después de GF; no modelado aquí → desempate estable.
     return a.group.localeCompare(b.group)
   })
 }
@@ -192,30 +194,32 @@ function createQualifierContext(predictions) {
   })
   const rankedThirds = thirdPlaceGlobalOrder(predictions)
   const advancing = rankedThirds.slice(0, 8)
-  const thirdRankGroups = advancing.map(t => t.group)
   const thirdTeamByGroup = new Map(rankedThirds.map(t => [t.group, t.team]))
-  return { tablesByGroup, thirdRankGroups, thirdTeamByGroup, advancing }
+  /** Firma de los 8 grupos con 3.º clasificado (Anexo C FIFA). */
+  const qualifiedThirdSignature = [...advancing.map(t => t.group)].sort().join('')
+  const thirdAssignment =
+    THIRD_ASSIGNMENT_BY_QUALIFIED_GROUPS[qualifiedThirdSignature] ?? null
+  return { tablesByGroup, thirdTeamByGroup, advancing, thirdAssignment }
 }
 
 /**
+ * Cruce 32avos: lado con posible 3.º.
  * @param {{ kind: string, group?: string, thirdFrom?: string[] }} side
- * @param {Set<string>} pool
+ * @param {{ tablesByGroup: Record<string, TableRow[]>, thirdTeamByGroup: Map<string, string>, thirdAssignment: Record<string, string> | null }} ctx
+ * @param {number} matchFifa — partido FIFA (los huecos de 3.º usan 74, 77, 79, 80, 81, 82, 85, 87).
  */
-function resolveTeamForSide(side, tablesByGroup, thirdTeamByGroup, thirdRankGroups, pool) {
+function resolveTeamForSide(side, ctx, matchFifa) {
+  const { tablesByGroup, thirdTeamByGroup, thirdAssignment } = ctx
   if (side.kind === 'first') {
     return tablesByGroup[side.group]?.[0]?.team ?? null
   }
   if (side.kind === 'second') {
     return tablesByGroup[side.group]?.[1]?.team ?? null
   }
-  if (side.kind === 'third' && side.thirdFrom) {
-    for (const g of thirdRankGroups) {
-      if (!pool.has(g)) continue
-      if (!side.thirdFrom.includes(g)) continue
-      pool.delete(g)
-      return thirdTeamByGroup.get(g) ?? null
-    }
-    return null
+  if (side.kind === 'third' && side.thirdFrom && thirdAssignment) {
+    const groupLetter = thirdAssignment[String(matchFifa)]
+    if (!groupLetter || !side.thirdFrom.includes(groupLetter)) return null
+    return thirdTeamByGroup.get(groupLetter) ?? null
   }
   return null
 }
@@ -226,23 +230,10 @@ function resolveTeamForSide(side, tablesByGroup, thirdTeamByGroup, thirdRankGrou
  */
 export function buildRoundOf32Teams(predictions) {
   const ctx = createQualifierContext(predictions)
-  const pool = new Set(ctx.advancing.map(t => t.group))
   return ROUND_OF_32.map(m => ({
     fifa: m.fifa,
-    homeTeam: resolveTeamForSide(
-      m.home,
-      ctx.tablesByGroup,
-      ctx.thirdTeamByGroup,
-      ctx.thirdRankGroups,
-      pool,
-    ),
-    awayTeam: resolveTeamForSide(
-      m.away,
-      ctx.tablesByGroup,
-      ctx.thirdTeamByGroup,
-      ctx.thirdRankGroups,
-      pool,
-    ),
+    homeTeam: resolveTeamForSide(m.home, ctx, m.fifa),
+    awayTeam: resolveTeamForSide(m.away, ctx, m.fifa),
   }))
 }
 
