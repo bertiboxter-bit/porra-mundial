@@ -42,11 +42,9 @@ import {
   rankingDisplayName,
   readStoredUsername,
 } from './userIdentity.js'
+import { FIFA_FIXTURES_URL } from './fifaMatchUrls.js'
 
 const OFFICIAL_HASH = '#resultados-oficiales'
-
-const FIFA_FIXTURES_URL =
-  'https://www.fifa.com/es/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures?country=ES&wtw-filter=ALL'
 
 const GROUP_VIEW_STORAGE_KEY = 'porra_mundial_group_view'
 const GROUP_TAB_STORAGE_KEY = 'porra_mundial_group_tab'

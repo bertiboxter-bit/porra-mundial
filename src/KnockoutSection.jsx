@@ -36,7 +36,14 @@ function MatchCard({
           {dateLabel ? (
             <span className="text-[11px] text-amber-200/90 whitespace-nowrap">{dateLabel}</span>
           ) : null}
-          {fifaMatchNumber ? <MatchFifaLink fifaMatchNumber={fifaMatchNumber} compact /> : null}
+          {fifaMatchNumber ? (
+            <MatchFifaLink
+              home={homeTeam || undefined}
+              away={awayTeam || undefined}
+              fifaMatchNumber={fifaMatchNumber}
+              compact
+            />
+          ) : null}
         </div>
       </div>
       <div className="flex items-center gap-2 min-h-[3rem]">

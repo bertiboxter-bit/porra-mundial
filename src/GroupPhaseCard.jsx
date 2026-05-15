@@ -25,10 +25,8 @@ export default function GroupPhaseCard({ group, predictions, setPredictions, pre
                   <span className="font-bold text-amber-200/90">Jornada {match.matchday}</span>
                   <span className="text-white/50"> · </span>
                   <span>{match.dateLabel}</span>
-                  <span className="text-white/40"> · </span>
-                  <span className="text-white/50">M{match.fifa ?? match.id}</span>
                 </span>
-                <MatchFifaLink fifaMatchNumber={match.fifa ?? match.id} />
+                <MatchFifaLink home={match.home} away={match.away} />
               </div>
               <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
                 <div className="flex justify-end min-w-0">
