@@ -59,10 +59,15 @@ function groupRoundRobinMatches(group, teams) {
 
 let _id = 0
 export const GROUP_STAGE_MATCHES = GROUP_LETTERS.flatMap(letter =>
-  groupRoundRobinMatches(letter, GROUPS[letter]).map(m => ({
-    id: ++_id,
-    ...m,
-  })),
+  groupRoundRobinMatches(letter, GROUPS[letter]).map(m => {
+    const id = ++_id
+    return {
+      id,
+      /** Número de partido FIFA (1–72 en fase de grupos), alineado con id secuencial del calendario local */
+      fifa: id,
+      ...m,
+    }
+  }),
 )
 
 /**

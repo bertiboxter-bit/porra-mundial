@@ -1,6 +1,21 @@
 import { supabase } from './supabase'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Trophy, Star, Goal, Users, Save, Lock, FolderOpen, LogOut, Home, Swords, SlidersHorizontal, LayoutList, LayoutGrid } from 'lucide-react'
+import {
+  Trophy,
+  Star,
+  Goal,
+  Users,
+  Save,
+  Lock,
+  FolderOpen,
+  LogOut,
+  Home,
+  Swords,
+  SlidersHorizontal,
+  LayoutList,
+  LayoutGrid,
+  CalendarDays,
+} from 'lucide-react'
 import {
   GROUP_LETTERS,
   computeFullKnockout,
@@ -29,6 +44,9 @@ import {
 } from './userIdentity.js'
 
 const OFFICIAL_HASH = '#resultados-oficiales'
+
+const FIFA_FIXTURES_URL =
+  'https://www.fifa.com/es/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures?country=ES&wtw-filter=ALL'
 
 const GROUP_VIEW_STORAGE_KEY = 'porra_mundial_group_view'
 const GROUP_TAB_STORAGE_KEY = 'porra_mundial_group_tab'
@@ -412,6 +430,16 @@ export default function WorldCupPoolApp() {
               {label}
             </button>
           ))}
+          <a
+            href={FIFA_FIXTURES_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Horarios, dónde ver y resultados oficiales en FIFA.com"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-amber-200/95 hover:bg-amber-400/15 border border-amber-400/25 transition"
+          >
+            <CalendarDays size={16} className="opacity-90 shrink-0" aria-hidden />
+            Partidos FIFA
+          </a>
         </div>
       </nav>
 

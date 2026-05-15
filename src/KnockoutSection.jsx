@@ -1,9 +1,11 @@
 import { getKnockoutWinnerFromCell } from './bracketLogic.js'
 import { TeamFlag } from './TeamFlag.jsx'
+import MatchFifaLink from './MatchFifaLink.jsx'
 
 function MatchCard({
   title,
   dateLabel,
+  fifaMatchNumber,
   homeLabel,
   awayLabel,
   homeTeam,
@@ -26,13 +28,16 @@ function MatchCard({
 
   return (
     <div className="rounded-2xl border border-[#2a6fb0]/40 bg-gradient-to-br from-[#0a2342]/90 to-[#051525]/95 p-4 text-left flex flex-col gap-2 shadow-lg shadow-black/30">
-      <div className="flex justify-between items-start gap-2">
+      <div className="flex justify-between items-start gap-2 flex-wrap">
         <span className="text-[11px] font-bold uppercase tracking-wider text-[#7ec8ff]">
           {title}
         </span>
-        {dateLabel && (
-          <span className="text-[11px] text-amber-200/90 whitespace-nowrap">{dateLabel}</span>
-        )}
+        <div className="flex flex-wrap items-center gap-2 justify-end">
+          {dateLabel ? (
+            <span className="text-[11px] text-amber-200/90 whitespace-nowrap">{dateLabel}</span>
+          ) : null}
+          {fifaMatchNumber ? <MatchFifaLink fifaMatchNumber={fifaMatchNumber} compact /> : null}
+        </div>
       </div>
       <div className="flex items-center gap-2 min-h-[3rem]">
         <div className="flex-1 min-w-0">
@@ -157,6 +162,7 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
           <MatchCard
             key={m.fifa}
             title={`Partido ${m.fifa}`}
+            fifaMatchNumber={m.fifa}
             dateLabel={m.dateLabel}
             homeLabel={m.homeLabel}
             awayLabel={m.awayLabel}
@@ -178,6 +184,7 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
           <MatchCard
             key={m.fifa}
             title={`Partido ${m.fifa}`}
+            fifaMatchNumber={m.fifa}
             dateLabel={m.labelEs}
             homeLabel={m.homeLabel}
             awayLabel={m.awayLabel}
@@ -199,6 +206,7 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
           <MatchCard
             key={m.fifa}
             title={`Partido ${m.fifa}`}
+            fifaMatchNumber={m.fifa}
             dateLabel={m.labelEs}
             homeLabel={m.homeLabel}
             awayLabel={m.awayLabel}
@@ -220,6 +228,7 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
           <MatchCard
             key={m.fifa}
             title={`Partido ${m.fifa}`}
+            fifaMatchNumber={m.fifa}
             dateLabel={m.labelEs}
             homeLabel={m.homeLabel}
             awayLabel={m.awayLabel}
@@ -239,6 +248,7 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
       <div className="grid gap-3 sm:grid-cols-2 mb-10">
         <MatchCard
           title="Partido 103"
+          fifaMatchNumber={103}
           dateLabel={bracket.thirdPlace.dateLabel}
           homeLabel={bracket.thirdPlace.homeLabel}
           awayLabel={bracket.thirdPlace.awayLabel}
@@ -257,6 +267,7 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
       <div className="grid gap-3 sm:grid-cols-2">
         <MatchCard
           title="Final"
+          fifaMatchNumber={104}
           dateLabel={bracket.final.dateLabel}
           homeLabel={bracket.final.homeLabel}
           awayLabel={bracket.final.awayLabel}

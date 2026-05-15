@@ -11,6 +11,7 @@ import {
 import KnockoutSection from './KnockoutSection.jsx'
 import { TeamNameWithFlag } from './TeamFlag.jsx'
 import GroupTieBreakPanel from './GroupTieBreakPanel.jsx'
+import MatchFifaLink from './MatchFifaLink.jsx'
 import MessageModal from './MessageModal.jsx'
 import { fetchOfficialState, saveOfficialAndRecalculatePoints } from './officialResultsService.js'
 import { mergeSpecials } from './porraSpecials.js'
@@ -152,10 +153,15 @@ export default function OfficialResultsPanel({ onBack }) {
                               key={match.id}
                               className="rounded-2xl border border-white/10 bg-black/25 p-3"
                             >
-                              <div className="text-xs text-sky-200/80 mb-2 text-left">
-                                <span className="font-bold text-amber-200/90">Jornada {match.matchday}</span>
-                                <span className="text-white/50"> · </span>
-                                <span>{match.dateLabel}</span>
+                              <div className="text-xs text-sky-200/80 mb-2 text-left flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span>
+                                  <span className="font-bold text-amber-200/90">Jornada {match.matchday}</span>
+                                  <span className="text-white/50"> · </span>
+                                  <span>{match.dateLabel}</span>
+                                  <span className="text-white/40"> · </span>
+                                  <span className="text-white/50">M{match.fifa ?? match.id}</span>
+                                </span>
+                                <MatchFifaLink fifaMatchNumber={match.fifa ?? match.id} />
                               </div>
                               <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
                                 <div className="flex justify-end min-w-0">
