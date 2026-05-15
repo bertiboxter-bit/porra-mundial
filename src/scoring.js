@@ -169,8 +169,8 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
     if (!groupOfficialComplete(officialPred, g)) continue
     const teams = GROUPS[g]
     const matches = GROUP_STAGE_MATCHES.filter(m => m.group === g)
-    const oTable = calculateGroupTable(officialPred, teams, matches)
-    const uTable = calculateGroupTable(pred, teams, matches)
+    const oTable = calculateGroupTable(officialPred, teams, matches, g)
+    const uTable = calculateGroupTable(pred, teams, matches, g)
     const n = Math.min(oTable.length, uTable.length)
     for (let i = 0; i < n; i++) {
       if (oTable[i].team !== uTable[i].team) continue

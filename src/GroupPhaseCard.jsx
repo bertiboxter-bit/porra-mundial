@@ -1,10 +1,11 @@
 import { GROUPS, GROUP_STAGE_MATCHES, calculateGroupTable } from './bracketLogic.js'
 import { TeamNameWithFlag } from './TeamFlag.jsx'
+import GroupTieBreakPanel from './GroupTieBreakPanel.jsx'
 
 export default function GroupPhaseCard({ group, predictions, setPredictions, predictionsLockedGlobally }) {
   const teams = GROUPS[group]
   const groupMatches = GROUP_STAGE_MATCHES.filter(m => m.group === group)
-  const table = calculateGroupTable(predictions, teams, groupMatches)
+  const table = calculateGroupTable(predictions, teams, groupMatches, group)
 
   return (
     <div className="rounded-3xl border border-[#2a6fb0]/35 bg-gradient-to-br from-slate-900/80 to-[#061525]/90 p-5 shadow-lg">
@@ -92,10 +93,13 @@ export default function GroupPhaseCard({ group, predictions, setPredictions, pre
               </thead>
 
               <tbody className="bg-slate-950/60">
-                {table.map(team => (
+                {table.map((team, idx) => (
                   <tr key={team.team} className="border-t border-white/10">
                     <td className="p-3 font-medium text-white/90">
-                      <TeamNameWithFlag name={team.team} />
+                      <span className="inline-flex items-center gap-2">
+                        <span className="text-[10px] text-sky-300/70 w-4 shrink-0">{idx + 1}º</span>
+                        <TeamNameWithFlag name={team.team} />
+                      </span>
                     </td>
                     <td className="text-center text-sky-100">{team.pts}</td>
                     <td className="text-center text-sky-100">{team.dg}</td>
@@ -105,6 +109,15 @@ export default function GroupPhaseCard({ group, predictions, setPredictions, pre
               </tbody>
             </table>
           </div>
+          <GroupTieBreakPanel
+            group={group}
+            predictions={predictions}
+            setPredictions={setPredictions}
+            disabled={predictionsLockedGlobally}
+          />
+          <p className="text-[10px] text-sky-200/55 mt-2 m-0">
+            Pulsa la bandera para abrir la convocatoria oficial en FIFA.com (cuando esté publicada).
+          </p>
         </div>
       </div>
     </div>

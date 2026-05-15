@@ -15,12 +15,101 @@ import {
 
 /** @typedef {{ team: string, pts: number, gf: number, gc: number, dg: number }} TableRow */
 
+/** Clave reservada dentro del JSON `predictions` (no coincide con ids de partido). */
+export const GROUP_TIE_BREAK_KEY = '__groupTieBreak'
+
+function sameGroupStats(a, b) {
+  return a.pts === b.pts && a.dg === b.dg && a.gf === b.gf
+}
+
 /**
- * @param {Record<number, { home?: string, away?: string }>} predictions
+ * Firma estable de un conjunto de equipos empatados (mismo PTS/DG/GF).
+ * @param {string[]} teamNames
+ */
+export function tieSignatureForTeams(teamNames) {
+  return [...teamNames].sort((x, y) => x.localeCompare(y, 'es')).join('|')
+}
+
+/**
+ * @param {Record<string, unknown>} predictions
+ * @param {string} groupLetter
+ * @returns {Record<string, string[]> | null}
+ */
+function tieOrderMapForGroup(predictions, groupLetter) {
+  if (!predictions || typeof predictions !== 'object' || !groupLetter) return null
+  const root = predictions[GROUP_TIE_BREAK_KEY]
+  if (!root || typeof root !== 'object') return null
+  const perGroup = /** @type {Record<string, unknown>} */ (root)[groupLetter]
+  return perGroup && typeof perGroup === 'object' ? /** @type {Record<string, string[]>} */ (perGroup) : null
+}
+
+/** @param {unknown} saved @param {string[]} clusterTeams */
+export function tieOrderIsValidForCluster(saved, clusterTeams) {
+  if (!Array.isArray(saved) || saved.length !== clusterTeams.length) return false
+  const set = new Set(clusterTeams)
+  if (saved.some(t => !set.has(t))) return false
+  return new Set(saved).size === saved.length
+}
+
+/**
+ * @param {TableRow[]} rows
+ * @param {Record<string, string[]> | null} tieMap
+ */
+function applyTiesWithinRuns(rows, tieMap) {
+  if (!tieMap || rows.length === 0) return rows
+  const out = []
+  let i = 0
+  while (i < rows.length) {
+    let j = i + 1
+    while (j < rows.length && sameGroupStats(rows[i], rows[j])) j++
+    const run = rows.slice(i, j)
+    if (run.length > 1) {
+      const cluster = run.map(r => r.team)
+      const sig = tieSignatureForTeams(cluster)
+      const saved = tieMap[sig]
+      if (tieOrderIsValidForCluster(saved, cluster)) {
+        const idx = new Map(saved.map((t, k) => [t, k]))
+        run.sort((a, b) => (idx.get(a.team) ?? 999) - (idx.get(b.team) ?? 999))
+      } else {
+        run.sort((a, b) => a.team.localeCompare(b.team, 'es'))
+      }
+      out.push(...run)
+    } else {
+      out.push(...run)
+    }
+    i = j
+  }
+  return out
+}
+
+/**
+ * Tramos consecutivos con el mismo PTS, DG y GF (para UI de desempate).
+ * @param {TableRow[]} table
+ * @returns {{ teams: string[], signature: string }[]}
+ */
+export function findGroupTieRuns(table) {
+  const runs = []
+  let i = 0
+  while (i < table.length) {
+    let j = i + 1
+    while (j < table.length && sameGroupStats(table[i], table[j])) j++
+    const slice = table.slice(i, j)
+    if (slice.length > 1) {
+      const teams = slice.map(r => r.team)
+      runs.push({ teams, signature: tieSignatureForTeams(teams) })
+    }
+    i = j
+  }
+  return runs
+}
+
+/**
+ * @param {Record<string, unknown>} predictions
  * @param {string[]} teams
  * @param {{ id: number, home: string, away: string }[]} matches
+ * @param {string} [groupLetter] — si se indica, se aplican órdenes manuales en `predictions.__groupTieBreak`
  */
-export function calculateGroupTable(predictions, teams, matches) {
+export function calculateGroupTable(predictions, teams, matches, groupLetter) {
   /** @type {Record<string, TableRow>} */
   const table = {}
 
@@ -29,7 +118,7 @@ export function calculateGroupTable(predictions, teams, matches) {
   })
 
   matches.forEach(match => {
-    const prediction = predictions[match.id]
+    const prediction = predictions?.[match.id]
     if (!prediction) return
 
     const homeGoals = Number(prediction.home)
@@ -51,18 +140,23 @@ export function calculateGroupTable(predictions, teams, matches) {
     }
   })
 
-  return Object.values(table).sort((a, b) => {
+  const base = Object.values(table).sort((a, b) => {
     if (b.pts !== a.pts) return b.pts - a.pts
     if (b.dg !== a.dg) return b.dg - a.dg
     if (b.gf !== a.gf) return b.gf - a.gf
     return a.team.localeCompare(b.team, 'es')
   })
+
+  if (!groupLetter) return base
+  const tieMap = tieOrderMapForGroup(predictions, groupLetter)
+  if (!tieMap) return base
+  return applyTiesWithinRuns(base, tieMap)
 }
 
 function tableForGroup(predictions, groupLetter) {
   const teams = GROUPS[groupLetter]
   const matches = GROUP_STAGE_MATCHES.filter(m => m.group === groupLetter)
-  return calculateGroupTable(predictions, teams, matches)
+  return calculateGroupTable(predictions, teams, matches, groupLetter)
 }
 
 function allThirdPlaces(predictions) {

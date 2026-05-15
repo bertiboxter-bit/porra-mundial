@@ -10,6 +10,7 @@ import {
 } from './bracketLogic.js'
 import KnockoutSection from './KnockoutSection.jsx'
 import { TeamNameWithFlag } from './TeamFlag.jsx'
+import GroupTieBreakPanel from './GroupTieBreakPanel.jsx'
 import MessageModal from './MessageModal.jsx'
 import { fetchOfficialState, saveOfficialAndRecalculatePoints } from './officialResultsService.js'
 import { mergeSpecials } from './porraSpecials.js'
@@ -135,7 +136,7 @@ export default function OfficialResultsPanel({ onBack }) {
                 {GROUP_LETTERS.map(group => {
                   const teams = GROUPS[group]
                   const groupMatches = GROUP_STAGE_MATCHES.filter(m => m.group === group)
-                  const table = calculateGroupTable(predictions, teams, groupMatches)
+                  const table = calculateGroupTable(predictions, teams, groupMatches, group)
                   return (
                     <div
                       key={group}
@@ -218,10 +219,15 @@ export default function OfficialResultsPanel({ onBack }) {
                                 </tr>
                               </thead>
                               <tbody className="bg-slate-950/60">
-                                {table.map(team => (
+                                {table.map((team, idx) => (
                                   <tr key={team.team} className="border-t border-white/10">
                                     <td className="p-3 font-medium text-white/90">
-                                      <TeamNameWithFlag name={team.team} />
+                                      <span className="inline-flex items-center gap-2">
+                                        <span className="text-[10px] text-sky-300/70 w-4 shrink-0">
+                                          {idx + 1}º
+                                        </span>
+                                        <TeamNameWithFlag name={team.team} />
+                                      </span>
                                     </td>
                                     <td className="text-center text-sky-100">{team.pts}</td>
                                     <td className="text-center text-sky-100">{team.dg}</td>
@@ -231,6 +237,11 @@ export default function OfficialResultsPanel({ onBack }) {
                               </tbody>
                             </table>
                           </div>
+                          <GroupTieBreakPanel
+                            group={group}
+                            predictions={predictions}
+                            setPredictions={setPredictions}
+                          />
                         </div>
                       </div>
                     </div>
