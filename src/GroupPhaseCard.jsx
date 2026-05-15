@@ -46,7 +46,7 @@ export default function GroupPhaseCard({
                 <span>
                   <span className="font-bold text-amber-200/90">Jornada {match.matchday}</span>
                   <span className="text-white/50"> · </span>
-                  <span>{getGroupMatchKickoffLabelEs(match.home, match.away) ?? match.dateLabel}</span>
+                  <span>{match.kickoffLabelEs ?? getGroupMatchKickoffLabelEs(match.home, match.away) ?? match.dateLabel}</span>
                 </span>
                 <MatchFifaLink home={match.home} away={match.away} />
                 {showMatchPredictions && onOpenMatchPredictions ? (

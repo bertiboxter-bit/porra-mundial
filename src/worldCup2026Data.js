@@ -1,7 +1,8 @@
 /**
  * Mundial FIFA 2026 — grupos tras el sorteo oficial (dic. 2025).
- * Fase de grupos: calendario tipo FIFA (A1–A4 = orden de bolillas en el grupo).
+ * Fase de grupos: calendario FIFA (local/visitante, jornada y hora en España).
  */
+import { GROUP_STAGE_FIXTURES } from './groupStageFixtures.js'
 
 /** Ventana de calendario FIFA — fase de grupos (todas las selecciones, 11–27 jun 2026). */
 export const GROUP_MATCHDAY_LABEL = {
@@ -42,33 +43,20 @@ export const GROUPS = {
 }
 
 /**
- * Calendario local de 4 equipos (posiciones 1–4 del sorteo del grupo).
- * J1: 1v2, 3v4 | J2: 1v3, 4v2 | J3: 1v4, 2v3
+ * Partidos de grupos: calendario FIFA (local/visitante, jornada y hora en España).
+ * `id` = número de partido FIFA (1–72), estable para enlaces y resultados oficiales.
  */
-function groupRoundRobinMatches(group, teams) {
-  const [p1, p2, p3, p4] = teams
-  return [
-    { group, matchday: 1, home: p1, away: p2, dateLabel: GROUP_MATCHDAY_LABEL[1] },
-    { group, matchday: 1, home: p3, away: p4, dateLabel: GROUP_MATCHDAY_LABEL[1] },
-    { group, matchday: 2, home: p1, away: p3, dateLabel: GROUP_MATCHDAY_LABEL[2] },
-    { group, matchday: 2, home: p4, away: p2, dateLabel: GROUP_MATCHDAY_LABEL[2] },
-    { group, matchday: 3, home: p1, away: p4, dateLabel: GROUP_MATCHDAY_LABEL[3] },
-    { group, matchday: 3, home: p2, away: p3, dateLabel: GROUP_MATCHDAY_LABEL[3] },
-  ]
-}
-
-let _id = 0
-export const GROUP_STAGE_MATCHES = GROUP_LETTERS.flatMap(letter =>
-  groupRoundRobinMatches(letter, GROUPS[letter]).map(m => {
-    const id = ++_id
-    return {
-      id,
-      /** Número de partido FIFA (1–72 en fase de grupos), alineado con id secuencial del calendario local */
-      fifa: id,
-      ...m,
-    }
-  }),
-)
+export const GROUP_STAGE_MATCHES = GROUP_STAGE_FIXTURES.map(f => ({
+  id: f.fifa,
+  fifa: f.fifa,
+  group: f.group,
+  matchday: f.matchday,
+  home: f.home,
+  away: f.away,
+  dateLabel: GROUP_MATCHDAY_LABEL[f.matchday],
+  kickoffLabelEs: f.kickoffLabelEs,
+  fifaCentreId: f.fifaCentreId,
+})).sort((a, b) => a.fifa - b.fifa)
 
 /**
  * 32avos — plantilla FIFA (partidos 73–88).

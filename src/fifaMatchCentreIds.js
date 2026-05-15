@@ -3,6 +3,8 @@
  * Fuente: calendario oficial publicado en FIFA.com (pareja local/visitante).
  * No hay patrón aritmético: cada partido tiene un id único (400021440–400021511).
  */
+import { getFixtureByTeams } from './groupStageFixtures.js'
+
 export const FIFA_MATCH_CENTRE_PATH =
   'https://www.fifa.com/es/match-centre/match/17/285023/289273'
 
@@ -108,5 +110,7 @@ export function fifaCentrePairKey(home, away) {
  */
 export function getFifaCentreIdForTeams(home, away) {
   if (!home || !away) return null
+  const directed = getFixtureByTeams(home, away)?.fifaCentreId
+  if (directed) return directed
   return FIFA_CENTRE_ID_BY_TEAM_PAIR[fifaCentrePairKey(home, away)] ?? null
 }
