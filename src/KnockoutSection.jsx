@@ -1,6 +1,8 @@
 import { getKnockoutWinnerFromCell } from './bracketLogic.js'
 import { TeamFlag } from './TeamFlag.jsx'
 import MatchFifaLink from './MatchFifaLink.jsx'
+import MatchPredictionsLink from './MatchPredictionsLink.jsx'
+import ScoreInput from './ScoreInput.jsx'
 
 function MatchCard({
   title,
@@ -14,6 +16,8 @@ function MatchCard({
   scores,
   onPatch,
   locked,
+  showMatchPredictions,
+  onOpenMatchPredictions,
 }) {
   const p = scores[scoreKey] || {}
   const h = Number(p.home)
@@ -44,6 +48,20 @@ function MatchCard({
               compact
             />
           ) : null}
+          {showMatchPredictions && onOpenMatchPredictions ? (
+            <MatchPredictionsLink
+              onClick={() =>
+                onOpenMatchPredictions({
+                  title:
+                    homeTeam && awayTeam
+                      ? `${homeTeam} – ${awayTeam}`
+                      : `${homeLabel} – ${awayLabel}`,
+                  subtitle: title,
+                  scoreKey,
+                })
+              }
+            />
+          ) : null}
         </div>
       </div>
       <div className="flex items-center gap-2 min-h-[3rem]">
@@ -66,72 +84,54 @@ function MatchCard({
         <div className="flex flex-col items-center gap-1 shrink-0">
           {draw90 ? (
             <div className="flex items-center justify-center gap-2">
-              <input
-                type="number"
-                min="0"
-                inputMode="numeric"
+              <ScoreInput
                 disabled={!editable}
                 aria-label="Penaltis marcados por el local"
                 className={inputCls}
                 value={p.pensHome ?? ''}
-                onChange={e => onPatch(scoreKey, 'pensHome', e.target.value)}
+                onChange={val => onPatch(scoreKey, 'pensHome', val)}
               />
               <div className="flex items-center gap-1.5">
-                <input
-                  type="number"
-                  min="0"
-                  inputMode="numeric"
+                <ScoreInput
                   disabled={!editable}
                   aria-label="Goles local (90' o 120', incl. prórroga)"
                   className={inputCls}
                   value={p.home ?? ''}
-                  onChange={e => onPatch(scoreKey, 'home', e.target.value)}
+                  onChange={val => onPatch(scoreKey, 'home', val)}
                 />
                 <span className="text-white/50">-</span>
-                <input
-                  type="number"
-                  min="0"
-                  inputMode="numeric"
+                <ScoreInput
                   disabled={!editable}
                   aria-label="Goles visitante (90' o 120', incl. prórroga)"
                   className={inputCls}
                   value={p.away ?? ''}
-                  onChange={e => onPatch(scoreKey, 'away', e.target.value)}
+                  onChange={val => onPatch(scoreKey, 'away', val)}
                 />
               </div>
-              <input
-                type="number"
-                min="0"
-                inputMode="numeric"
+              <ScoreInput
                 disabled={!editable}
                 aria-label="Penaltis marcados por el visitante"
                 className={inputCls}
                 value={p.pensAway ?? ''}
-                onChange={e => onPatch(scoreKey, 'pensAway', e.target.value)}
+                onChange={val => onPatch(scoreKey, 'pensAway', val)}
               />
             </div>
           ) : (
             <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                min="0"
-                inputMode="numeric"
+              <ScoreInput
                 disabled={!editable}
                 aria-label="Goles local (90' o 120', incl. prórroga)"
                 className={inputCls}
                 value={p.home ?? ''}
-                onChange={e => onPatch(scoreKey, 'home', e.target.value)}
+                onChange={val => onPatch(scoreKey, 'home', val)}
               />
               <span className="text-white/50">-</span>
-              <input
-                type="number"
-                min="0"
-                inputMode="numeric"
+              <ScoreInput
                 disabled={!editable}
                 aria-label="Goles visitante (90' o 120', incl. prórroga)"
                 className={inputCls}
                 value={p.away ?? ''}
-                onChange={e => onPatch(scoreKey, 'away', e.target.value)}
+                onChange={val => onPatch(scoreKey, 'away', val)}
               />
             </div>
           )}
@@ -149,7 +149,18 @@ function MatchCard({
   )
 }
 
-export default function KnockoutSection({ bracket, knockoutScores, onPatch, locked }) {
+export default function KnockoutSection({
+  bracket,
+  knockoutScores,
+  onPatch,
+  locked,
+  showMatchPredictions,
+  onOpenKnockoutMatchPredictions,
+}) {
+  const matchPredictionsProps = {
+    showMatchPredictions,
+    onOpenMatchPredictions: onOpenKnockoutMatchPredictions,
+  }
   return (
     <div className="rounded-3xl border border-[#c9a227]/25 bg-[#061a2e]/85 backdrop-blur-md p-6 shadow-2xl shadow-black/40">
       <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-sky-200 mb-1">
@@ -179,6 +190,7 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
             scores={knockoutScores}
             onPatch={onPatch}
             locked={locked}
+            {...matchPredictionsProps}
           />
         ))}
       </div>
@@ -201,6 +213,7 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
             scores={knockoutScores}
             onPatch={onPatch}
             locked={locked}
+            {...matchPredictionsProps}
           />
         ))}
       </div>
@@ -223,6 +236,7 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
             scores={knockoutScores}
             onPatch={onPatch}
             locked={locked}
+            {...matchPredictionsProps}
           />
         ))}
       </div>
@@ -245,6 +259,7 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
             scores={knockoutScores}
             onPatch={onPatch}
             locked={locked}
+            {...matchPredictionsProps}
           />
         ))}
       </div>
@@ -265,6 +280,7 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
           scores={knockoutScores}
           onPatch={onPatch}
           locked={locked}
+          {...matchPredictionsProps}
         />
       </div>
 
@@ -284,6 +300,7 @@ export default function KnockoutSection({ bracket, knockoutScores, onPatch, lock
           scores={knockoutScores}
           onPatch={onPatch}
           locked={locked}
+          {...matchPredictionsProps}
         />
       </div>
 

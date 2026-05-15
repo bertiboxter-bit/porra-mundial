@@ -12,6 +12,7 @@ import {
   SF_BRACKET,
   THIRD_PLACE_MATCH,
 } from './knockoutSchedule.js'
+import { sanitizeScoreInput } from './scoreInput.js'
 
 /** @typedef {{ team: string, pts: number, gf: number, gc: number, dg: number }} TableRow */
 
@@ -293,7 +294,7 @@ export function getKnockoutLoser(homeTeam, awayTeam, rawHome, rawAway) {
  * @param {string} val
  */
 export function applyKnockoutScorePatch(prev, key, side, val) {
-  const cur = { ...(prev[key] || {}), [side]: val }
+  const cur = { ...(prev[key] || {}), [side]: sanitizeScoreInput(val) }
   const h = Number(cur.home)
   const a = Number(cur.away)
   if (!Number.isNaN(h) && !Number.isNaN(a) && h !== a) {

@@ -2,11 +2,33 @@ import { GROUPS, GROUP_STAGE_MATCHES, calculateGroupTable } from './bracketLogic
 import { TeamNameWithFlag } from './TeamFlag.jsx'
 import GroupTieBreakPanel from './GroupTieBreakPanel.jsx'
 import MatchFifaLink from './MatchFifaLink.jsx'
+import MatchPredictionsLink from './MatchPredictionsLink.jsx'
+import ScoreInput from './ScoreInput.jsx'
+import { getGroupMatchKickoffLabelEs } from './groupMatchKickoffs.js'
+import { sanitizeScoreInput } from './scoreInput.js'
 
-export default function GroupPhaseCard({ group, predictions, setPredictions, predictionsLockedGlobally }) {
+export default function GroupPhaseCard({
+  group,
+  predictions,
+  setPredictions,
+  readOnly,
+  showMatchPredictions,
+  onOpenMatchPredictions,
+}) {
   const teams = GROUPS[group]
   const groupMatches = GROUP_STAGE_MATCHES.filter(m => m.group === group)
   const table = calculateGroupTable(predictions, teams, groupMatches, group)
+
+  const patchScore = (matchId, side, raw) => {
+    const val = sanitizeScoreInput(raw)
+    setPredictions(prev => ({
+      ...prev,
+      [matchId]: {
+        ...prev[matchId],
+        [side]: val,
+      },
+    }))
+  }
 
   return (
     <div className="rounded-3xl border border-[#2a6fb0]/35 bg-gradient-to-br from-slate-900/80 to-[#061525]/90 p-5 shadow-lg">
@@ -24,9 +46,12 @@ export default function GroupPhaseCard({ group, predictions, setPredictions, pre
                 <span>
                   <span className="font-bold text-amber-200/90">Jornada {match.matchday}</span>
                   <span className="text-white/50"> · </span>
-                  <span>{match.dateLabel}</span>
+                  <span>{getGroupMatchKickoffLabelEs(match.home, match.away) ?? match.dateLabel}</span>
                 </span>
                 <MatchFifaLink home={match.home} away={match.away} />
+                {showMatchPredictions && onOpenMatchPredictions ? (
+                  <MatchPredictionsLink onClick={() => onOpenMatchPredictions(match)} />
+                ) : null}
               </div>
               <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
                 <div className="flex justify-end min-w-0">
@@ -37,40 +62,22 @@ export default function GroupPhaseCard({ group, predictions, setPredictions, pre
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="0"
-                    disabled={predictionsLockedGlobally}
+                  <ScoreInput
+                    disabled={readOnly}
                     className="w-14 rounded-lg border border-white/20 bg-slate-950/80 p-2 text-center text-white disabled:opacity-40"
                     value={predictions[match.id]?.home || ''}
-                    onChange={e =>
-                      setPredictions(prev => ({
-                        ...prev,
-                        [match.id]: {
-                          ...prev[match.id],
-                          home: e.target.value,
-                        },
-                      }))
-                    }
+                    onChange={val => patchScore(match.id, 'home', val)}
+                    aria-label={`Goles de ${match.home}`}
                   />
 
                   <span className="text-white/40">-</span>
 
-                  <input
-                    type="number"
-                    min="0"
-                    disabled={predictionsLockedGlobally}
+                  <ScoreInput
+                    disabled={readOnly}
                     className="w-14 rounded-lg border border-white/20 bg-slate-950/80 p-2 text-center text-white disabled:opacity-40"
                     value={predictions[match.id]?.away || ''}
-                    onChange={e =>
-                      setPredictions(prev => ({
-                        ...prev,
-                        [match.id]: {
-                          ...prev[match.id],
-                          away: e.target.value,
-                        },
-                      }))
-                    }
+                    onChange={val => patchScore(match.id, 'away', val)}
+                    aria-label={`Goles de ${match.away}`}
                   />
                 </div>
 
@@ -115,7 +122,7 @@ export default function GroupPhaseCard({ group, predictions, setPredictions, pre
             group={group}
             predictions={predictions}
             setPredictions={setPredictions}
-            disabled={predictionsLockedGlobally}
+            disabled={readOnly}
           />
           <p className="text-[10px] text-sky-200/55 mt-2 m-0">
             Pulsa la bandera para abrir la convocatoria oficial en FIFA.com (cuando esté publicada).

@@ -12,6 +12,9 @@ import KnockoutSection from './KnockoutSection.jsx'
 import { TeamNameWithFlag } from './TeamFlag.jsx'
 import GroupTieBreakPanel from './GroupTieBreakPanel.jsx'
 import MatchFifaLink from './MatchFifaLink.jsx'
+import ScoreInput from './ScoreInput.jsx'
+import { getGroupMatchKickoffLabelEs } from './groupMatchKickoffs.js'
+import { sanitizeScoreInput } from './scoreInput.js'
 import MessageModal from './MessageModal.jsx'
 import { fetchOfficialState, saveOfficialAndRecalculatePoints } from './officialResultsService.js'
 import { mergeSpecials } from './porraSpecials.js'
@@ -157,7 +160,9 @@ export default function OfficialResultsPanel({ onBack }) {
                                 <span>
                                   <span className="font-bold text-amber-200/90">Jornada {match.matchday}</span>
                                   <span className="text-white/50"> · </span>
-                                  <span>{match.dateLabel}</span>
+                                  <span>
+                                    {getGroupMatchKickoffLabelEs(match.home, match.away) ?? match.dateLabel}
+                                  </span>
                                 </span>
                                 <MatchFifaLink home={match.home} away={match.away} />
                               </div>
@@ -169,36 +174,34 @@ export default function OfficialResultsPanel({ onBack }) {
                                   />
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    min="0"
+                                  <ScoreInput
                                     className="w-14 rounded-lg border border-white/20 bg-slate-950/80 p-2 text-center text-white"
                                     value={predictions[match.id]?.home ?? ''}
-                                    onChange={e =>
+                                    onChange={val =>
                                       setPredictions(prev => ({
                                         ...prev,
                                         [match.id]: {
                                           ...prev[match.id],
-                                          home: e.target.value,
+                                          home: sanitizeScoreInput(val),
                                         },
                                       }))
                                     }
+                                    aria-label={`Goles de ${match.home}`}
                                   />
                                   <span className="text-white/40">-</span>
-                                  <input
-                                    type="number"
-                                    min="0"
+                                  <ScoreInput
                                     className="w-14 rounded-lg border border-white/20 bg-slate-950/80 p-2 text-center text-white"
                                     value={predictions[match.id]?.away ?? ''}
-                                    onChange={e =>
+                                    onChange={val =>
                                       setPredictions(prev => ({
                                         ...prev,
                                         [match.id]: {
                                           ...prev[match.id],
-                                          away: e.target.value,
+                                          away: sanitizeScoreInput(val),
                                         },
                                       }))
                                     }
+                                    aria-label={`Goles de ${match.away}`}
                                   />
                                 </div>
                                 <div className="flex justify-start min-w-0">

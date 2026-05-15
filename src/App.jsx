@@ -43,6 +43,12 @@ import {
   readStoredUsername,
 } from './userIdentity.js'
 import { FIFA_FIXTURES_URL } from './fifaMatchUrls.js'
+import PorraPreviewBanner from './PorraPreviewBanner.jsx'
+import MatchPredictionsModal from './MatchPredictionsModal.jsx'
+import {
+  collectGroupMatchPredictions,
+  collectKnockoutMatchPredictions,
+} from './matchPredictions.js'
 
 const OFFICIAL_HASH = '#resultados-oficiales'
 
@@ -131,6 +137,8 @@ export default function WorldCupPoolApp() {
 
   const [predictionsLockedGlobally, setPredictionsLockedGlobally] = useState(false)
   const [lockModalMode, setLockModalMode] = useState(null)
+  const [porraPreviewUser, setPorraPreviewUser] = useState(null)
+  const [matchPredictionsModal, setMatchPredictionsModal] = useState(null)
 
   const [predictions, setPredictions] = useState({})
   const [knockoutScores, setKnockoutScores] = useState({})
@@ -211,6 +219,14 @@ export default function WorldCupPoolApp() {
   }, [])
 
   const savePrediction = async () => {
+    if (porraPreviewUser) {
+      showModal({
+        variant: 'info',
+        title: 'Solo lectura',
+        message: 'Estás viendo la porra de otro participante. Pulsa «Volver a mi vista» para editar la tuya.',
+      })
+      return
+    }
     if (predictionsLockedGlobally) {
       showModal({
         variant: 'info',
@@ -384,12 +400,69 @@ export default function WorldCupPoolApp() {
     })
   }, [savedUsers])
 
+  const isViewingOtherPorra = Boolean(porraPreviewUser)
+  const isReadOnly = predictionsLockedGlobally || isViewingOtherPorra
+
+  const activePredictions = useMemo(() => {
+    if (!porraPreviewUser?.predictions || typeof porraPreviewUser.predictions !== 'object') {
+      return predictions
+    }
+    return porraPreviewUser.predictions
+  }, [porraPreviewUser, predictions])
+
+  const activeKnockoutScores = useMemo(() => {
+    if (!porraPreviewUser?.knockout || typeof porraPreviewUser.knockout !== 'object') {
+      return knockoutScores
+    }
+    return porraPreviewUser.knockout
+  }, [porraPreviewUser, knockoutScores])
+
+  const activeSpecials = useMemo(
+    () => (porraPreviewUser ? mergeSpecials(porraPreviewUser.specials) : specials),
+    [porraPreviewUser, specials],
+  )
+
+  const openPorraPreview = useCallback(
+    user => {
+      setPorraPreviewUser(user)
+      scrollToSection('section-grupos')
+    },
+    [scrollToSection],
+  )
+
+  const closePorraPreview = useCallback(() => setPorraPreviewUser(null), [])
+
+  const closeMatchPredictionsModal = useCallback(() => setMatchPredictionsModal(null), [])
+
+  const openGroupMatchPredictions = useCallback(
+    match => {
+      setMatchPredictionsModal({
+        title: `${match.home} – ${match.away}`,
+        subtitle: `Grupo ${match.group} · Jornada ${match.matchday}`,
+        entries: collectGroupMatchPredictions(savedUsers, match.id),
+      })
+    },
+    [savedUsers],
+  )
+
+  const openKnockoutMatchPredictions = useCallback(
+    ({ title, subtitle, scoreKey }) => {
+      setMatchPredictionsModal({
+        title,
+        subtitle,
+        entries: collectKnockoutMatchPredictions(savedUsers, scoreKey),
+      })
+    },
+    [savedUsers],
+  )
+
   const fullBracket = useMemo(
-    () => computeFullKnockout(predictions, knockoutScores),
-    [predictions, knockoutScores],
+    () => computeFullKnockout(activePredictions, activeKnockoutScores),
+    [activePredictions, activeKnockoutScores],
   )
 
   const patchKoScore = (key, side, val) => {
+    if (isReadOnly) return
     setKnockoutScores(prev => applyKnockoutScorePatch(prev, key, side, val))
   }
 
@@ -526,18 +599,19 @@ export default function WorldCupPoolApp() {
                     onChange={e => setDisplayName(e.target.value)}
                     placeholder="Ej: Carlos"
                     autoComplete="off"
-                    className="w-full rounded-xl border border-white/20 bg-white/95 p-3 text-slate-900 mb-3"
+                    disabled={isViewingOtherPorra}
+                    className="w-full rounded-xl border border-white/20 bg-white/95 p-3 text-slate-900 mb-3 disabled:opacity-50"
                   />
 
                   <div className="mt-1 flex flex-col gap-2">
                     <button
                       type="button"
                       onClick={savePrediction}
-                      disabled={predictionsLockedGlobally}
+                      disabled={isReadOnly}
                       className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 font-bold p-3 flex items-center justify-center gap-2 hover:brightness-110 transition disabled:opacity-50"
                     >
-                      {predictionsLockedGlobally ? <Lock size={18} /> : <Save size={18} />}
-                      {predictionsLockedGlobally ? 'Bloqueado' : 'Guardar'}
+                      {isReadOnly ? <Lock size={18} /> : <Save size={18} />}
+                      {isReadOnly ? (isViewingOtherPorra ? 'Solo lectura' : 'Bloqueado') : 'Guardar'}
                     </button>
                     <button
                       type="button"
@@ -569,7 +643,8 @@ export default function WorldCupPoolApp() {
                     onChange={e => setDisplayName(e.target.value)}
                     placeholder="Ej: Carlos"
                     autoComplete="off"
-                    className="w-full rounded-xl border border-white/20 bg-white/95 p-3 text-slate-900"
+                    disabled={isViewingOtherPorra}
+                    className="w-full rounded-xl border border-white/20 bg-white/95 p-3 text-slate-900 disabled:opacity-50"
                   />
                   <p className="text-[11px] text-sky-200/65 mt-1 mb-3 leading-snug m-0">
                     Debe ser único entre todos los participantes (no se distingue mayúsculas). El usuario privado
@@ -589,11 +664,11 @@ export default function WorldCupPoolApp() {
                     <button
                       type="button"
                       onClick={savePrediction}
-                      disabled={predictionsLockedGlobally}
+                      disabled={isReadOnly}
                       className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 font-bold p-3 flex items-center justify-center gap-2 hover:brightness-110 transition disabled:opacity-50"
                     >
-                      {predictionsLockedGlobally ? <Lock size={18} /> : <Save size={18} />}
-                      {predictionsLockedGlobally ? 'Bloqueado' : 'Guardar'}
+                      {isReadOnly ? <Lock size={18} /> : <Save size={18} />}
+                      {isReadOnly ? (isViewingOtherPorra ? 'Solo lectura' : 'Bloqueado') : 'Guardar'}
                     </button>
                   </div>
                 </>
@@ -610,10 +685,13 @@ export default function WorldCupPoolApp() {
             <Lock className="shrink-0 text-amber-300" size={18} />
             <span>
               La edición de pronósticos está <strong className="font-semibold text-white">cerrada para todos</strong>
-              . Puedes seguir cargando una porra para consultarla; no se pueden guardar cambios.
+              . Pulsa un nombre en la clasificación para ver su porra completa, o «Pronósticos» en cada
+              partido para ver qué marcó cada participante.
             </span>
           </div>
         ) : null}
+
+        <PorraPreviewBanner user={porraPreviewUser} onClose={closePorraPreview} />
 
         <div className="grid xl:grid-cols-3 gap-6">
           <div className="xl:col-span-2 space-y-6">
@@ -694,9 +772,11 @@ export default function WorldCupPoolApp() {
                     <GroupPhaseCard
                       key={group}
                       group={group}
-                      predictions={predictions}
+                      predictions={activePredictions}
                       setPredictions={setPredictions}
-                      predictionsLockedGlobally={predictionsLockedGlobally}
+                      readOnly={isReadOnly}
+                      showMatchPredictions={predictionsLockedGlobally}
+                      onOpenMatchPredictions={openGroupMatchPredictions}
                     />
                   ))}
                 </div>
@@ -704,9 +784,11 @@ export default function WorldCupPoolApp() {
                 <div role="tabpanel" aria-label={`Grupo ${activeGroupTab}`}>
                   <GroupPhaseCard
                     group={activeGroupTab}
-                    predictions={predictions}
+                    predictions={activePredictions}
                     setPredictions={setPredictions}
-                    predictionsLockedGlobally={predictionsLockedGlobally}
+                    readOnly={isReadOnly}
+                    showMatchPredictions={predictionsLockedGlobally}
+                    onOpenMatchPredictions={openGroupMatchPredictions}
                   />
                 </div>
               )}
@@ -715,9 +797,11 @@ export default function WorldCupPoolApp() {
             <div id="section-knockout" className="scroll-mt-28">
               <KnockoutSection
                 bracket={fullBracket}
-                knockoutScores={knockoutScores}
+                knockoutScores={activeKnockoutScores}
                 onPatch={patchKoScore}
-                locked={predictionsLockedGlobally}
+                locked={isReadOnly}
+                showMatchPredictions={predictionsLockedGlobally}
+                onOpenKnockoutMatchPredictions={openKnockoutMatchPredictions}
               />
             </div>
 
@@ -748,10 +832,10 @@ export default function WorldCupPoolApp() {
                       <label key={key} className="block text-xs text-sky-200/90">
                         {label}
                         <input
-                          disabled={predictionsLockedGlobally}
+                          disabled={isReadOnly}
                           className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-sm text-white placeholder:text-slate-500 disabled:opacity-40"
                           placeholder="Equipo"
-                          value={specials[key] || ''}
+                          value={activeSpecials[key] || ''}
                           onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
                         />
                       </label>
@@ -770,10 +854,10 @@ export default function WorldCupPoolApp() {
                       <label key={key} className="block text-xs text-sky-200/90">
                         {label}
                         <input
-                          disabled={predictionsLockedGlobally}
+                          disabled={isReadOnly}
                           className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-sm text-white placeholder:text-slate-500 disabled:opacity-40"
                           placeholder="Jugador"
-                          value={specials[key] || ''}
+                          value={activeSpecials[key] || ''}
                           onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
                         />
                       </label>
@@ -792,10 +876,10 @@ export default function WorldCupPoolApp() {
                       <label key={key} className="block text-xs text-sky-200/90">
                         {label}
                         <input
-                          disabled={predictionsLockedGlobally}
+                          disabled={isReadOnly}
                           className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-sm text-white placeholder:text-slate-500 disabled:opacity-40"
                           placeholder="Jugador"
-                          value={specials[key] || ''}
+                          value={activeSpecials[key] || ''}
                           onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
                         />
                       </label>
@@ -806,10 +890,10 @@ export default function WorldCupPoolApp() {
                 <label className="block text-sm text-sky-200/90 max-w-md">
                   Máximo asistente
                   <input
-                    disabled={predictionsLockedGlobally}
+                    disabled={isReadOnly}
                     className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-white placeholder:text-slate-500 disabled:opacity-40"
                     placeholder="Jugador"
-                    value={specials.topAssist || ''}
+                    value={activeSpecials.topAssist || ''}
                     onChange={e => setSpecials(prev => ({ ...prev, topAssist: e.target.value }))}
                   />
                 </label>
@@ -828,8 +912,8 @@ export default function WorldCupPoolApp() {
               </div>
               <p className="text-xs text-sky-200/70 mb-4 leading-snug m-0">
                 Orden por puntos tras usar el panel de resultados oficiales (enlace en Inicio) y pulsar «Guardar
-                y recalcular puntos». El nombre en la clasificación es único entre participantes. Pulsa sobre la
-                cifra de puntos para ver el desglose.
+                y recalcular puntos». Con la porra bloqueada, pulsa un nombre para ver su pronóstico en modo lectura.
+                Pulsa la cifra de puntos para el desglose.
               </p>
 
               <div className="space-y-3">
@@ -840,15 +924,34 @@ export default function WorldCupPoolApp() {
                 {ranking.map((user, index) => (
                   <div
                     key={user.username || user.nickname || index}
-                    className="rounded-2xl border border-white/10 bg-black/30 p-4 flex items-center justify-between"
+                    className={`rounded-2xl border p-4 flex items-center justify-between ${
+                      porraPreviewUser?.username === user.username
+                        ? 'border-amber-400/40 bg-amber-950/25'
+                        : 'border-white/10 bg-black/30'
+                    }`}
                   >
-                    <div>
-                      <div className="font-bold text-white">
-                        #{index + 1} {rankingDisplayName(user)}
-                      </div>
+                    <div className="min-w-0 flex-1 pr-2">
+                      {predictionsLockedGlobally ? (
+                        <button
+                          type="button"
+                          onClick={() => openPorraPreview(user)}
+                          className={`font-bold text-left hover:text-amber-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 rounded px-0.5 -mx-0.5 ${
+                            porraPreviewUser?.username === user.username
+                              ? 'text-amber-200 underline decoration-amber-400/50'
+                              : 'text-white'
+                          }`}
+                          title="Ver porra en modo lectura"
+                        >
+                          #{index + 1} {rankingDisplayName(user)}
+                        </button>
+                      ) : (
+                        <div className="font-bold text-white">
+                          #{index + 1} {rankingDisplayName(user)}
+                        </div>
+                      )}
 
                       <div className="text-xs text-slate-400 mt-1">
-                        {new Date(user.updatedAt).toLocaleString()}
+                        {new Date(user.updatedAt).toLocaleString('es-ES')}
                       </div>
                     </div>
 
@@ -908,6 +1011,7 @@ export default function WorldCupPoolApp() {
       </div>
       </div>
       <PointsBreakdownModal state={pointsBreakdown} onClose={closePointsBreakdown} />
+      <MatchPredictionsModal state={matchPredictionsModal} onClose={closeMatchPredictionsModal} />
       <MessageModal modal={modal} onClose={closeModal} />
       <AdminLockModal
         mode={lockModalMode}
