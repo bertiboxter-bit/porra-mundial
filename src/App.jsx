@@ -43,7 +43,6 @@ import {
   readStoredUsername,
 } from './userIdentity.js'
 import { FIFA_FIXTURES_URL } from './fifaMatchUrls.js'
-import { useExternalEmbed } from './useExternalEmbed.js'
 import PorraPreviewBanner from './PorraPreviewBanner.jsx'
 import MatchPredictionsModal from './MatchPredictionsModal.jsx'
 import {
@@ -85,7 +84,6 @@ export default function WorldCupPoolApp() {
 
   const closeModal = useCallback(() => setModal(null), [])
   const closePointsBreakdown = useCallback(() => setPointsBreakdown(null), [])
-  const { openExternalPanel } = useExternalEmbed()
 
   const openPointsBreakdown = useCallback(async user => {
     const title = `Puntos · ${rankingDisplayName(user)}`
@@ -503,20 +501,16 @@ export default function WorldCupPoolApp() {
               {label}
             </button>
           ))}
-          <button
-            type="button"
+          <a
+            href={FIFA_FIXTURES_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             title="Horarios, dónde ver y resultados oficiales en FIFA.com"
-            onClick={() =>
-              openExternalPanel({
-                url: FIFA_FIXTURES_URL,
-                title: 'FIFA · Calendario y marcadores · Mundial 2026',
-              })
-            }
-            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-amber-200/95 hover:bg-amber-400/15 border border-amber-400/25 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-amber-200/95 hover:bg-amber-400/15 border border-amber-400/25 transition"
           >
             <CalendarDays size={16} className="opacity-90 shrink-0" aria-hidden />
             Partidos FIFA
-          </button>
+          </a>
         </div>
       </nav>
 

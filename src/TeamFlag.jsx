@@ -1,4 +1,3 @@
-import { useExternalEmbed } from './useExternalEmbed.js'
 import { getFlagCodeForTeam } from './teamFlagCodes.js'
 import { FLAG_COMPONENTS } from './flagComponents.js'
 import { getOfficialSquadUrl } from './teamOfficialSquadUrls.js'
@@ -8,7 +7,6 @@ import { getOfficialSquadUrl } from './teamOfficialSquadUrls.js'
  * Si hay URL oficial de convocatoria en FIFA, la bandera es un enlace externo.
  */
 export function TeamFlag({ teamName, size = 22, className = '', linkSquad = true }) {
-  const { openExternalPanel } = useExternalEmbed()
   const code = getFlagCodeForTeam(teamName)
   if (!code) return null
   const Flag = FLAG_COMPONENTS[code]
@@ -36,21 +34,17 @@ export function TeamFlag({ teamName, size = 22, className = '', linkSquad = true
   }
 
   return (
-    <button
-      type="button"
+    <a
+      href={squadUrl}
+      target="_blank"
+      rel="noopener noreferrer"
       title={`Convocatoria oficial de ${teamName} (FIFA.com)`}
       aria-label={`Ver convocatoria oficial de ${teamName} en FIFA.com`}
-      className={`inline-flex shrink-0 items-center rounded-sm border-0 bg-transparent p-0 transition hover:ring-2 hover:ring-amber-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 cursor-pointer ${className}`}
-      onClick={e => {
-        e.stopPropagation()
-        openExternalPanel({
-          url: squadUrl,
-          title: `Convocatoria — ${teamName}`,
-        })
-      }}
+      className={`inline-flex shrink-0 items-center rounded-sm transition hover:ring-2 hover:ring-amber-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${className}`}
+      onClick={e => e.stopPropagation()}
     >
       {flagNode}
-    </button>
+    </a>
   )
 }
 
