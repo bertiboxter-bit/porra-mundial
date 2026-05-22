@@ -64,6 +64,20 @@ export default function GroupTieBreakPanel({ group, predictions, setPredictions,
     })
   }
 
+  const confirmCluster = (signature, clusterTeams, order) => {
+    setPredictions(prev => {
+      const prevRoot = prev?.[GROUP_TIE_BREAK_KEY]
+      const tieRoot =
+        prevRoot && typeof prevRoot === 'object' ? { ...prevRoot } : {}
+      const prevGroup = tieRoot[group]
+      const groupMap =
+        prevGroup && typeof prevGroup === 'object' ? { ...prevGroup } : {}
+      groupMap[signature] = [...order]
+      tieRoot[group] = groupMap
+      return { ...prev, [GROUP_TIE_BREAK_KEY]: tieRoot }
+    })
+  }
+
   const clearCluster = signature => {
     setPredictions(prev => {
       const prevRoot = prev?.[GROUP_TIE_BREAK_KEY]
@@ -89,17 +103,27 @@ export default function GroupTieBreakPanel({ group, predictions, setPredictions,
   return (
     <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/[0.07] p-3 text-xs text-sky-100/90">
       <p className="font-semibold text-amber-200/95 m-0 mb-2">
-        Empate en puntos, diferencia de goles y goles a favor: define el orden en la tabla (afecta a
-        eliminatorias y a mejores terceros).
+        Empate en puntos, diferencia de goles y goles a favor: ordena los equipos y pulsa{' '}
+        <span className="text-white">Confirmar orden</span> en cada bloque. Sin confirmar, no se
+        podrá guardar la porra.
       </p>
       <ul className="list-none m-0 p-0 space-y-3">
         {runs.map(run => {
           const saved = tieMap[run.signature]
           const order = tieOrderIsValidForCluster(saved, run.teams) ? saved : run.teams
-          const hasCustom = tieOrderIsValidForCluster(saved, run.teams)
+          const confirmed = tieOrderIsValidForCluster(saved, run.teams)
 
           return (
             <li key={run.signature} className="rounded-lg bg-black/25 p-2">
+              {!confirmed ? (
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-300/95 m-0 mb-2">
+                  Pendiente de confirmar
+                </p>
+              ) : (
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300/90 m-0 mb-2">
+                  Orden confirmado
+                </p>
+              )}
               <div className="flex flex-wrap items-center gap-1.5">
                 {order.map((team, idx) => (
                   <span
@@ -127,13 +151,20 @@ export default function GroupTieBreakPanel({ group, predictions, setPredictions,
                     </button>
                   </span>
                 ))}
-                {hasCustom ? (
+                <button
+                  type="button"
+                  onClick={() => confirmCluster(run.signature, run.teams, order)}
+                  className="ml-1 rounded-md border border-emerald-400/40 bg-emerald-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-200 hover:bg-emerald-500/25"
+                >
+                  Confirmar orden
+                </button>
+                {confirmed ? (
                   <button
                     type="button"
                     onClick={() => clearCluster(run.signature)}
-                    className="ml-1 text-[10px] uppercase tracking-wide text-sky-300/90 hover:text-white underline-offset-2 hover:underline"
+                    className="text-[10px] uppercase tracking-wide text-sky-300/90 hover:text-white underline-offset-2 hover:underline"
                   >
-                    Orden predeterminado
+                    Deshacer confirmación
                   </button>
                 ) : null}
               </div>

@@ -38,8 +38,8 @@ export function TeamFlag({ teamName, size = 22, className = '', linkSquad = true
       href={squadUrl}
       target="_blank"
       rel="noopener noreferrer"
-      title={`Convocatoria oficial de ${teamName} (FIFA.com)`}
-      aria-label={`Ver convocatoria oficial de ${teamName} en FIFA.com`}
+      title={`Noticias y plantilla de ${teamName} en FIFA.com`}
+      aria-label={`Ver noticias del equipo ${teamName} en FIFA.com`}
       className={`inline-flex shrink-0 items-center rounded-sm transition hover:ring-2 hover:ring-amber-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${className}`}
       onClick={e => e.stopPropagation()}
     >

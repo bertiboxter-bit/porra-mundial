@@ -1,6 +1,6 @@
 /**
  * Slug de ruta en fifa.com para cada selección (Mundial 2026).
- * La convocatoria oficial se publica en FIFA; la URL puede evolucionar, pero el patrón es estable.
+ * Noticias y datos del equipo en FIFA (`…/teams/{slug}/team-news`).
  */
 const FIFA_WC26_TEAM_BASE =
   'https://www.fifa.com/es/tournaments/mens/worldcup/canadamexicousa2026/teams'
@@ -65,5 +65,5 @@ export function getOfficialSquadUrl(teamName) {
   if (!teamName || typeof teamName !== 'string') return null
   const slug = TEAM_FIFA_SLUG[teamName.trim()]
   if (!slug) return null
-  return `${FIFA_WC26_TEAM_BASE}/${slug}/squad`
+  return `${FIFA_WC26_TEAM_BASE}/${slug}/team-news`
 }

@@ -106,6 +106,28 @@ export function findGroupTieRuns(table) {
 }
 
 /**
+ * Empates PTS/DG/GF sin orden guardado y confirmado en `predictions.__groupTieBreak`.
+ * @param {Record<string, unknown>} predictions
+ * @returns {{ group: string, teams: string[] }[]}
+ */
+export function listPendingGroupTieBreaks(predictions) {
+  const pending = []
+  GROUP_LETTERS.forEach(groupLetter => {
+    const teams = GROUPS[groupLetter]
+    const matches = GROUP_STAGE_MATCHES.filter(m => m.group === groupLetter)
+    const table = calculateGroupTable(predictions, teams, matches, groupLetter)
+    const tieMap = tieOrderMapForGroup(predictions, groupLetter)
+    for (const run of findGroupTieRuns(table)) {
+      const saved = tieMap?.[run.signature]
+      if (!tieOrderIsValidForCluster(saved, run.teams)) {
+        pending.push({ group: groupLetter, teams: run.teams })
+      }
+    }
+  })
+  return pending
+}
+
+/**
  * @param {Record<string, unknown>} predictions
  * @param {string[]} teams
  * @param {{ id: number, home: string, away: string }[]} matches

@@ -20,6 +20,7 @@ import {
   GROUP_LETTERS,
   computeFullKnockout,
   applyKnockoutScorePatch,
+  listPendingGroupTieBreaks,
 } from './bracketLogic.js'
 import KnockoutSection from './KnockoutSection.jsx'
 import GroupPhaseCard from './GroupPhaseCard.jsx'
@@ -34,6 +35,8 @@ import {
 } from './officialResultsService.js'
 import { getScoreBreakdown } from './scoring.js'
 import { defaultSpecials, mergeSpecials } from './porraSpecials.js'
+import { podiumTeamsFromBracket } from './porraBracketPodium.js'
+import { WORLD_CUP_STAR_PLAYER_OPTIONS } from './worldCup2026StarPlayers.js'
 import {
   USERNAME_STORAGE_KEY,
   normalizeUsername,
@@ -275,6 +278,18 @@ export default function WorldCupPoolApp() {
       })
       return
     }
+    const pendingTies = listPendingGroupTieBreaks(predictions)
+    if (pendingTies.length > 0) {
+      const detail = pendingTies
+        .map(p => `grupo ${p.group} (${p.teams.join(', ')})`)
+        .join('; ')
+      showModal({
+        variant: 'error',
+        title: 'Empates sin confirmar',
+        message: `Hay equipos empatados a todo en fase de grupos. Ordena cada bloque y pulsa «Confirmar orden» antes de guardar: ${detail}.`,
+      })
+      return
+    }
     try {
       const { data: prior } = await supabase.from('predictions').select('points').eq('username', u).maybeSingle()
       const { error } = await supabase.from('predictions').upsert(
@@ -284,7 +299,12 @@ export default function WorldCupPoolApp() {
           nickname: d,
           predictions,
           knockout: knockoutScores,
-          specials: mergeSpecials(specials),
+          specials: mergeSpecials({
+            ...specials,
+            ...podiumTeamsFromBracket(
+              computeFullKnockout(predictions, knockoutScores),
+            ),
+          }),
           points: prior?.points ?? 0,
           updated_at: new Date().toISOString(),
         },
@@ -460,6 +480,9 @@ export default function WorldCupPoolApp() {
     () => computeFullKnockout(activePredictions, activeKnockoutScores),
     [activePredictions, activeKnockoutScores],
   )
+
+  /** Podio de equipos: solo desde marcadores de final y 3.er puesto (no editable). */
+  const podiumTeams = useMemo(() => podiumTeamsFromBracket(fullBracket), [fullBracket])
 
   const patchKoScore = (key, side, val) => {
     if (isReadOnly) return
@@ -815,9 +838,13 @@ export default function WorldCupPoolApp() {
               </div>
 
               <p className="text-sm text-sky-200/75 mb-4 m-0 leading-relaxed">
-                Escribe los nombres como en el panel de resultados oficiales (sin distinguir mayúsculas). El
-                campeón, subcampeón y 3.er puesto se comparan con la final y el partido de tercer puesto cuando
-                existan marcadores oficiales.
+                Escribe los nombres de jugadores como en el panel de resultados oficiales (sin distinguir
+                mayúsculas).{' '}
+                <strong className="font-semibold text-amber-200/95">
+                  Campeón, subcampeón y 3.er puesto
+                </strong>{' '}
+                salen de tus marcadores de la final y del partido por el tercer puesto en eliminatorias; no
+                se pueden editar aquí.
               </p>
 
               <div className="space-y-6">
@@ -825,18 +852,20 @@ export default function WorldCupPoolApp() {
                   <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0">Podio (equipos)</h3>
                   <div className="grid sm:grid-cols-3 gap-3">
                     {[
-                      ['champion', 'Campeón'],
-                      ['runnerUp', 'Subcampeón'],
-                      ['thirdPlace', '3.er puesto'],
-                    ].map(([key, label]) => (
+                      ['champion', 'Campeón', podiumTeams.champion],
+                      ['runnerUp', 'Subcampeón', podiumTeams.runnerUp],
+                      ['thirdPlace', '3.er puesto', podiumTeams.thirdPlace],
+                    ].map(([key, label, value]) => (
                       <label key={key} className="block text-xs text-sky-200/90">
                         {label}
                         <input
-                          disabled={isReadOnly}
-                          className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-sm text-white placeholder:text-slate-500 disabled:opacity-40"
-                          placeholder="Equipo"
-                          value={activeSpecials[key] || ''}
-                          onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
+                          readOnly
+                          disabled
+                          tabIndex={-1}
+                          aria-readonly="true"
+                          className="mt-1 w-full cursor-default rounded-2xl border border-white/10 bg-black/40 p-3 text-sm text-sky-100/95 opacity-100"
+                          placeholder="Marca final y 3.er puesto arriba"
+                          value={value || ''}
                         />
                       </label>
                     ))}
@@ -855,8 +884,9 @@ export default function WorldCupPoolApp() {
                         {label}
                         <input
                           disabled={isReadOnly}
+                          list="wc-star-players"
                           className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-sm text-white placeholder:text-slate-500 disabled:opacity-40"
-                          placeholder="Jugador"
+                          placeholder="Jugador (sugerencias)"
                           value={activeSpecials[key] || ''}
                           onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
                         />
@@ -877,8 +907,9 @@ export default function WorldCupPoolApp() {
                         {label}
                         <input
                           disabled={isReadOnly}
+                          list="wc-star-players"
                           className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-sm text-white placeholder:text-slate-500 disabled:opacity-40"
-                          placeholder="Jugador"
+                          placeholder="Jugador (sugerencias)"
                           value={activeSpecials[key] || ''}
                           onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
                         />
@@ -887,12 +918,19 @@ export default function WorldCupPoolApp() {
                   </div>
                 </div>
 
+                <datalist id="wc-star-players">
+                  {WORLD_CUP_STAR_PLAYER_OPTIONS.map(name => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
+
                 <label className="block text-sm text-sky-200/90 max-w-md">
                   Máximo asistente
                   <input
                     disabled={isReadOnly}
+                    list="wc-star-players"
                     className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-white placeholder:text-slate-500 disabled:opacity-40"
-                    placeholder="Jugador"
+                    placeholder="Jugador (sugerencias)"
                     value={activeSpecials.topAssist || ''}
                     onChange={e => setSpecials(prev => ({ ...prev, topAssist: e.target.value }))}
                   />
