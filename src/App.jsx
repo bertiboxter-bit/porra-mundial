@@ -716,8 +716,8 @@ export default function WorldCupPoolApp() {
 
         <PorraPreviewBanner user={porraPreviewUser} onClose={closePorraPreview} />
 
-        <div className="grid xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2 space-y-6">
+        <div className="grid xl:grid-cols-3 gap-6 items-start">
+          <div className="xl:col-span-2 min-w-0 space-y-6">
             <div
               id="section-grupos"
               className="scroll-mt-28 rounded-3xl border border-cyan-400/15 bg-slate-900/50 backdrop-blur-md shadow-xl p-6"
@@ -939,10 +939,10 @@ export default function WorldCupPoolApp() {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <div
               id="section-ranking"
-              className="scroll-mt-28 rounded-3xl border border-cyan-400/15 bg-slate-900/55 backdrop-blur-md p-6 shadow-xl lg:sticky lg:top-20"
+              className="scroll-mt-28 rounded-3xl border border-cyan-400/15 bg-slate-900/55 backdrop-blur-md p-6 shadow-xl"
             >
               <div className="flex items-center gap-3 mb-4">
                 <Users className="text-amber-300" />
@@ -954,7 +954,7 @@ export default function WorldCupPoolApp() {
                 Pulsa la cifra de puntos para el desglose.
               </p>
 
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[min(70vh,42rem)] overflow-y-auto pr-1 -mr-1">
                 {ranking.length === 0 && (
                   <div className="text-slate-400 text-sm">Todavía no hay usuarios registrados.</div>
                 )}
