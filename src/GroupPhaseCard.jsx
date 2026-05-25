@@ -14,6 +14,7 @@ export default function GroupPhaseCard({
   readOnly,
   showMatchPredictions,
   onOpenMatchPredictions,
+  qualificationStatusByTeam = {},
 }) {
   const teams = GROUPS[group]
   const groupMatches = GROUP_STAGE_MATCHES.filter(m => m.group === group)
@@ -102,19 +103,45 @@ export default function GroupPhaseCard({
               </thead>
 
               <tbody className="bg-slate-950/60">
-                {table.map((team, idx) => (
-                  <tr key={team.team} className="border-t border-white/10">
-                    <td className="p-3 font-medium text-white/90">
-                      <span className="inline-flex items-center gap-2">
-                        <span className="text-[10px] text-sky-300/70 w-4 shrink-0">{idx + 1}º</span>
-                        <TeamNameWithFlag name={team.team} />
-                      </span>
-                    </td>
-                    <td className="text-center text-sky-100">{team.pts}</td>
-                    <td className="text-center text-sky-100">{team.dg}</td>
-                    <td className="text-center text-sky-100">{team.gf}</td>
-                  </tr>
-                ))}
+                {table.map((team, idx) => {
+                  const status = qualificationStatusByTeam[team.team]?.status
+                  const eliminated = status === 'eliminated'
+
+                  return (
+                    <tr
+                      key={team.team}
+                      className={`border-t border-white/10 transition ${
+                        eliminated
+                          ? 'bg-red-950/45 text-red-100 shadow-[inset_4px_0_0_rgba(248,113,113,0.75)]'
+                          : ''
+                      }`}
+                    >
+                      <td className={`p-3 font-medium ${eliminated ? 'text-red-100' : 'text-white/90'}`}>
+                        <span className="inline-flex items-center gap-2">
+                          <span
+                            className={`text-[10px] w-4 shrink-0 ${
+                              eliminated ? 'text-red-300/90' : 'text-sky-300/70'
+                            }`}
+                          >
+                            {idx + 1}º
+                          </span>
+                          <TeamNameWithFlag
+                            name={team.team}
+                            textClassName={eliminated ? 'text-red-100 line-through decoration-red-300/70' : ''}
+                          />
+                          {eliminated ? (
+                            <span className="rounded-full border border-red-400/35 bg-red-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-red-200">
+                              Eliminada
+                            </span>
+                          ) : null}
+                        </span>
+                      </td>
+                      <td className={`text-center ${eliminated ? 'text-red-100' : 'text-sky-100'}`}>{team.pts}</td>
+                      <td className={`text-center ${eliminated ? 'text-red-100' : 'text-sky-100'}`}>{team.dg}</td>
+                      <td className={`text-center ${eliminated ? 'text-red-100' : 'text-sky-100'}`}>{team.gf}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

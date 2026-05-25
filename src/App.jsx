@@ -21,6 +21,7 @@ import {
   computeFullKnockout,
   applyKnockoutScorePatch,
   listPendingGroupTieBreaks,
+  buildGroupQualificationStatus,
 } from './bracketLogic.js'
 import KnockoutSection from './KnockoutSection.jsx'
 import GroupPhaseCard from './GroupPhaseCard.jsx'
@@ -481,6 +482,11 @@ export default function WorldCupPoolApp() {
     [activePredictions, activeKnockoutScores],
   )
 
+  const groupQualificationStatus = useMemo(
+    () => buildGroupQualificationStatus(activePredictions),
+    [activePredictions],
+  )
+
   /** Podio de equipos: solo desde marcadores de final y 3.er puesto (no editable). */
   const podiumTeams = useMemo(() => podiumTeamsFromBracket(fullBracket), [fullBracket])
 
@@ -800,6 +806,7 @@ export default function WorldCupPoolApp() {
                       readOnly={isReadOnly}
                       showMatchPredictions={predictionsLockedGlobally}
                       onOpenMatchPredictions={openGroupMatchPredictions}
+                      qualificationStatusByTeam={groupQualificationStatus}
                     />
                   ))}
                 </div>
@@ -812,6 +819,7 @@ export default function WorldCupPoolApp() {
                     readOnly={isReadOnly}
                     showMatchPredictions={predictionsLockedGlobally}
                     onOpenMatchPredictions={openGroupMatchPredictions}
+                    qualificationStatusByTeam={groupQualificationStatus}
                   />
                 </div>
               )}

@@ -183,6 +183,65 @@ function tableForGroup(predictions, groupLetter) {
   return calculateGroupTable(predictions, teams, matches, groupLetter)
 }
 
+function scoreCellIsComplete(cell) {
+  if (!cell || typeof cell !== 'object') return false
+  const homeRaw = cell.home
+  const awayRaw = cell.away
+  if (homeRaw === '' || homeRaw == null || awayRaw === '' || awayRaw == null) return false
+  const home = Number(homeRaw)
+  const away = Number(awayRaw)
+  return !Number.isNaN(home) && !Number.isNaN(away)
+}
+
+function groupIsComplete(predictions, groupLetter) {
+  const matches = GROUP_STAGE_MATCHES.filter(m => m.group === groupLetter)
+  return matches.every(m => scoreCellIsComplete(predictions?.[m.id]))
+}
+
+/**
+ * Estado visual de clasificación por selección en fase de grupos.
+ * Conservador mientras no están todos los grupos completos: solo marca eliminado al 4.º de un grupo cerrado.
+ * El 3.º se marca eliminado únicamente cuando ya está resuelto el ranking global de mejores terceros.
+ * @param {Record<string, unknown>} predictions
+ * @returns {Record<string, { status: 'qualified' | 'third-qualified' | 'third-pending' | 'eliminated', group: string, position: number }>}
+ */
+export function buildGroupQualificationStatus(predictions) {
+  /** @type {Record<string, { status: 'qualified' | 'third-qualified' | 'third-pending' | 'eliminated', group: string, position: number }>} */
+  const statusByTeam = {}
+  const completeGroups = new Set(GROUP_LETTERS.filter(g => groupIsComplete(predictions, g)))
+  const allGroupsComplete = completeGroups.size === GROUP_LETTERS.length
+  const advancingThirdGroups = allGroupsComplete
+    ? new Set(thirdPlaceGlobalOrder(predictions).slice(0, 8).map(t => t.group))
+    : new Set()
+
+  GROUP_LETTERS.forEach(groupLetter => {
+    if (!completeGroups.has(groupLetter)) return
+    const table = tableForGroup(predictions, groupLetter)
+    table.forEach((row, idx) => {
+      const position = idx + 1
+      if (position <= 2) {
+        statusByTeam[row.team] = { status: 'qualified', group: groupLetter, position }
+        return
+      }
+      if (position === 3) {
+        statusByTeam[row.team] = {
+          status: allGroupsComplete && advancingThirdGroups.has(groupLetter)
+            ? 'third-qualified'
+            : allGroupsComplete
+              ? 'eliminated'
+              : 'third-pending',
+          group: groupLetter,
+          position,
+        }
+        return
+      }
+      statusByTeam[row.team] = { status: 'eliminated', group: groupLetter, position }
+    })
+  })
+
+  return statusByTeam
+}
+
 function allThirdPlaces(predictions) {
   return GROUP_LETTERS.map(g => {
     const table = tableForGroup(predictions, g)
