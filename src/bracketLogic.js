@@ -305,9 +305,21 @@ function resolveTeamForSide(side, ctx, matchFifa) {
   return null
 }
 
+function groupPositionSourceLabel(side, matchFifa, thirdAssignment) {
+  if (side.kind === 'first') return `1.º Grupo ${side.group}`
+  if (side.kind === 'second') return `2.º Grupo ${side.group}`
+  if (side.kind === 'third' && side.thirdFrom) {
+    const assignedGroup = thirdAssignment?.[String(matchFifa)]
+    return assignedGroup
+      ? `3.º Grupo ${assignedGroup} (mejor tercero)`
+      : `3.º Grupo ${side.thirdFrom.join('/')}`
+  }
+  return ''
+}
+
 /**
  * @param {Record<number, { home?: string, away?: string }>} predictions
- * @returns {{ fifa: number, homeTeam: string | null, awayTeam: string | null }[]}
+ * @returns {{ fifa: number, homeTeam: string | null, awayTeam: string | null, homeSource: string, awaySource: string }[]}
  */
 export function buildRoundOf32Teams(predictions) {
   const ctx = createQualifierContext(predictions)
@@ -315,6 +327,8 @@ export function buildRoundOf32Teams(predictions) {
     fifa: m.fifa,
     homeTeam: resolveTeamForSide(m.home, ctx, m.fifa),
     awayTeam: resolveTeamForSide(m.away, ctx, m.fifa),
+    homeSource: groupPositionSourceLabel(m.home, m.fifa, ctx.thirdAssignment),
+    awaySource: groupPositionSourceLabel(m.away, m.fifa, ctx.thirdAssignment),
   }))
 }
 
@@ -400,6 +414,8 @@ export function computeFullKnockout(predictions, koScores) {
       awayTeam: m.awayTeam,
       homeLabel: m.homeTeam || 'Por definir (grupos)',
       awayLabel: m.awayTeam || 'Por definir (grupos)',
+      homeSource: m.homeSource,
+      awaySource: m.awaySource,
       dateLabel: d?.labelEs ?? '',
       winner: w,
       scoreKey: key,
@@ -419,6 +435,8 @@ export function computeFullKnockout(predictions, koScores) {
       awayTeam: at,
       homeLabel: labelOrWinner(ht, row.from[0]),
       awayLabel: labelOrWinner(at, row.from[1]),
+      homeSource: `Ganador partido ${row.from[0]}`,
+      awaySource: `Ganador partido ${row.from[1]}`,
       winner: w,
       scoreKey: key,
     }
@@ -437,6 +455,8 @@ export function computeFullKnockout(predictions, koScores) {
       awayTeam: at,
       homeLabel: labelOrWinner(ht, row.from[0]),
       awayLabel: labelOrWinner(at, row.from[1]),
+      homeSource: `Ganador partido ${row.from[0]}`,
+      awaySource: `Ganador partido ${row.from[1]}`,
       winner: w,
       scoreKey: key,
     }
@@ -455,6 +475,8 @@ export function computeFullKnockout(predictions, koScores) {
       awayTeam: at,
       homeLabel: labelOrWinner(ht, row.from[0]),
       awayLabel: labelOrWinner(at, row.from[1]),
+      homeSource: `Ganador partido ${row.from[0]}`,
+      awaySource: `Ganador partido ${row.from[1]}`,
       winner: w,
       scoreKey: key,
     }
@@ -492,6 +514,8 @@ export function computeFullKnockout(predictions, koScores) {
       awayTeam: l102,
       homeLabel: l101 || 'Perdedor SF 101',
       awayLabel: l102 || 'Perdedor SF 102',
+      homeSource: 'Perdedor partido 101',
+      awaySource: 'Perdedor partido 102',
       winner: tpWinner,
       scoreKey: 'tp-103',
     },
@@ -502,6 +526,8 @@ export function computeFullKnockout(predictions, koScores) {
       awayTeam: fAway,
       homeLabel: labelOrWinner(fHome, 101),
       awayLabel: labelOrWinner(fAway, 102),
+      homeSource: 'Ganador partido 101',
+      awaySource: 'Ganador partido 102',
       winner: cupWinner,
       scoreKey: 'fin-104',
     },

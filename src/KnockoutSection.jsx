@@ -10,6 +10,8 @@ function MatchCard({
   fifaMatchNumber,
   homeLabel,
   awayLabel,
+  homeSource,
+  awaySource,
   homeTeam,
   awayTeam,
   scoreKey,
@@ -66,18 +68,36 @@ function MatchCard({
       </div>
       <div className="flex items-center gap-2 min-h-[3rem]">
         <div className="flex-1 min-w-0">
-          <div
-            className={`flex items-start gap-2 min-w-0 ${decided === homeTeam ? 'text-amber-300' : 'text-white/90'}`}
-          >
+          <div className="flex items-start gap-2 min-w-0">
             {homeTeam ? <TeamFlag teamName={homeTeam} size={20} /> : null}
-            <span className="text-sm font-semibold leading-snug">{homeLabel}</span>
+            <div className="min-w-0">
+              <div
+                className={`text-sm font-semibold leading-snug ${decided === homeTeam ? 'text-amber-300' : 'text-white/90'}`}
+              >
+                {homeLabel}
+              </div>
+              {homeSource ? (
+                <div className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-sky-300/65">
+                  {homeSource}
+                </div>
+              ) : null}
+            </div>
           </div>
           <div className="text-center text-[10px] text-white/40 py-1">vs</div>
-          <div
-            className={`flex items-start gap-2 min-w-0 ${decided === awayTeam ? 'text-amber-300' : 'text-white/90'}`}
-          >
+          <div className="flex items-start gap-2 min-w-0">
             {awayTeam ? <TeamFlag teamName={awayTeam} size={20} /> : null}
-            <span className="text-sm font-semibold leading-snug">{awayLabel}</span>
+            <div className="min-w-0">
+              <div
+                className={`text-sm font-semibold leading-snug ${decided === awayTeam ? 'text-amber-300' : 'text-white/90'}`}
+              >
+                {awayLabel}
+              </div>
+              {awaySource ? (
+                <div className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-sky-300/65">
+                  {awaySource}
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 
@@ -184,6 +204,8 @@ export default function KnockoutSection({
             dateLabel={m.dateLabel}
             homeLabel={m.homeLabel}
             awayLabel={m.awayLabel}
+            homeSource={m.homeSource}
+            awaySource={m.awaySource}
             homeTeam={m.homeTeam}
             awayTeam={m.awayTeam}
             scoreKey={m.scoreKey}
@@ -207,6 +229,8 @@ export default function KnockoutSection({
             dateLabel={m.labelEs}
             homeLabel={m.homeLabel}
             awayLabel={m.awayLabel}
+            homeSource={m.homeSource}
+            awaySource={m.awaySource}
             homeTeam={m.homeTeam}
             awayTeam={m.awayTeam}
             scoreKey={m.scoreKey}
@@ -230,6 +254,8 @@ export default function KnockoutSection({
             dateLabel={m.labelEs}
             homeLabel={m.homeLabel}
             awayLabel={m.awayLabel}
+            homeSource={m.homeSource}
+            awaySource={m.awaySource}
             homeTeam={m.homeTeam}
             awayTeam={m.awayTeam}
             scoreKey={m.scoreKey}
@@ -253,6 +279,8 @@ export default function KnockoutSection({
             dateLabel={m.labelEs}
             homeLabel={m.homeLabel}
             awayLabel={m.awayLabel}
+            homeSource={m.homeSource}
+            awaySource={m.awaySource}
             homeTeam={m.homeTeam}
             awayTeam={m.awayTeam}
             scoreKey={m.scoreKey}
@@ -274,6 +302,8 @@ export default function KnockoutSection({
           dateLabel={bracket.thirdPlace.dateLabel}
           homeLabel={bracket.thirdPlace.homeLabel}
           awayLabel={bracket.thirdPlace.awayLabel}
+          homeSource={bracket.thirdPlace.homeSource}
+          awaySource={bracket.thirdPlace.awaySource}
           homeTeam={bracket.thirdPlace.homeTeam}
           awayTeam={bracket.thirdPlace.awayTeam}
           scoreKey={bracket.thirdPlace.scoreKey}
@@ -294,6 +324,8 @@ export default function KnockoutSection({
           dateLabel={bracket.final.dateLabel}
           homeLabel={bracket.final.homeLabel}
           awayLabel={bracket.final.awayLabel}
+          homeSource={bracket.final.homeSource}
+          awaySource={bracket.final.awaySource}
           homeTeam={bracket.final.homeTeam}
           awayTeam={bracket.final.awayTeam}
           scoreKey={bracket.final.scoreKey}
