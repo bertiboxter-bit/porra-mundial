@@ -25,6 +25,90 @@ function sameGroupStats(a, b) {
 }
 
 /**
+ * Mini-tabla entre equipos empatados a puntos (solo partidos directos entre ellos).
+ * @param {Record<string, unknown>} predictions
+ * @param {{ home: string, away: string }[]} matches
+ * @param {string[]} teamNames
+ * @returns {Record<string, TableRow>}
+ */
+function headToHeadStats(predictions, matches, teamNames) {
+  const set = new Set(teamNames)
+  /** @type {Record<string, TableRow>} */
+  const table = {}
+  teamNames.forEach(team => {
+    table[team] = { team, pts: 0, gf: 0, gc: 0, dg: 0 }
+  })
+
+  matches.forEach(match => {
+    if (!set.has(match.home) || !set.has(match.away)) return
+    const prediction = predictions?.[match.id]
+    if (!prediction) return
+
+    const homeGoals = Number(prediction.home)
+    const awayGoals = Number(prediction.away)
+    if (Number.isNaN(homeGoals) || Number.isNaN(awayGoals)) return
+
+    table[match.home].gf += homeGoals
+    table[match.home].gc += awayGoals
+    table[match.away].gf += awayGoals
+    table[match.away].gc += homeGoals
+    table[match.home].dg = table[match.home].gf - table[match.home].gc
+    table[match.away].dg = table[match.away].gf - table[match.away].gc
+
+    if (homeGoals > awayGoals) table[match.home].pts += 3
+    else if (awayGoals > homeGoals) table[match.away].pts += 3
+    else {
+      table[match.home].pts += 1
+      table[match.away].pts += 1
+    }
+  })
+
+  return table
+}
+
+/** @param {TableRow} a @param {TableRow} b @param {Record<string, TableRow>} h2h */
+function compareTeamsFifaTieCluster(a, b, h2h) {
+  const ha = h2h[a.team] || a
+  const hb = h2h[b.team] || b
+  if (hb.pts !== ha.pts) return hb.pts - ha.pts
+  if (hb.dg !== ha.dg) return hb.dg - ha.dg
+  if (hb.gf !== ha.gf) return hb.gf - ha.gf
+  if (b.dg !== a.dg) return b.dg - a.dg
+  if (b.gf !== a.gf) return b.gf - a.gf
+  return a.team.localeCompare(b.team, 'es')
+}
+
+/**
+ * @param {TableRow[]} rows
+ * @param {{ home: string, away: string }[]} matches
+ * @param {Record<string, unknown>} predictions
+ * @param {Record<string, string[]> | null} tieMap
+ */
+function rankGroupTableWithHeadToHead(rows, matches, predictions, tieMap) {
+  const byPts = [...rows].sort((a, b) => b.pts - a.pts)
+  const ranked = []
+
+  let i = 0
+  while (i < byPts.length) {
+    let j = i + 1
+    while (j < byPts.length && byPts[j].pts === byPts[i].pts) j++
+    const cluster = byPts.slice(i, j)
+
+    if (cluster.length > 1) {
+      const teamNames = cluster.map(r => r.team)
+      const h2h = headToHeadStats(predictions, matches, teamNames)
+      cluster.sort((a, b) => compareTeamsFifaTieCluster(a, b, h2h))
+      ranked.push(...applyTiesWithinRuns(cluster, tieMap))
+    } else {
+      ranked.push(...cluster)
+    }
+    i = j
+  }
+
+  return ranked
+}
+
+/**
  * Firma estable de un conjunto de equipos empatados (mismo PTS/DG/GF).
  * @param {string[]} teamNames
  */
@@ -164,17 +248,9 @@ export function calculateGroupTable(predictions, teams, matches, groupLetter) {
     }
   })
 
-  const base = Object.values(table).sort((a, b) => {
-    if (b.pts !== a.pts) return b.pts - a.pts
-    if (b.dg !== a.dg) return b.dg - a.dg
-    if (b.gf !== a.gf) return b.gf - a.gf
-    return a.team.localeCompare(b.team, 'es')
-  })
-
-  if (!groupLetter) return base
-  const tieMap = tieOrderMapForGroup(predictions, groupLetter)
-  if (!tieMap) return base
-  return applyTiesWithinRuns(base, tieMap)
+  const rows = Object.values(table)
+  const tieMap = groupLetter ? tieOrderMapForGroup(predictions, groupLetter) : null
+  return rankGroupTableWithHeadToHead(rows, matches, predictions, tieMap)
 }
 
 function tableForGroup(predictions, groupLetter) {
