@@ -604,14 +604,10 @@ export default function WorldCupPoolApp() {
               <p className="text-sky-200/90 text-sm font-semibold tracking-widest uppercase mb-2">
                 FIFA World Cup 26™ · Porra
               </p>
-              <h1 className="text-4xl sm:text-5xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-sky-200">
+              <h1 className="text-4xl sm:text-5xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-sky-200">
                 Porra Mundial 2026
               </h1>
-              <p className="text-sky-100/85 text-lg max-w-xl">
-                Fase de grupos con fechas de jornada, clasificación en vivo y eliminatorias
-                enlazadas hasta la final.
-              </p>
-              <p className="mt-4 mb-0">
+              <p className="mt-0 mb-0">
                 <a
                   href={OFFICIAL_HASH}
                   className="text-sm font-semibold text-amber-200 hover:text-amber-100 underline decoration-amber-200/50 underline-offset-2"

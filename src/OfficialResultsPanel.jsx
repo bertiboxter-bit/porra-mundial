@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Save, Loader2 } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Goal, Star, Share2, Shield } from 'lucide-react'
 import {
   GROUP_LETTERS,
   GROUPS,
@@ -19,6 +19,7 @@ import MessageModal from './MessageModal.jsx'
 import { fetchOfficialState, saveOfficialAndRecalculatePoints } from './officialResultsService.js'
 import { mergeSpecials } from './porraSpecials.js'
 import { WORLD_CUP_GOALKEEPER_OPTIONS } from './worldCup2026Goalkeepers.js'
+import { WORLD_CUP_STAR_PLAYER_OPTIONS } from './worldCup2026StarPlayers.js'
 
 export default function OfficialResultsPanel({ onBack }) {
   const [predictions, setPredictions] = useState({})
@@ -277,7 +278,10 @@ export default function OfficialResultsPanel({ onBack }) {
               </p>
               <div className="space-y-5">
                 <div>
-                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0">Pichichi / goleador</h3>
+                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0 flex items-center gap-2">
+                    <Goal size={16} className="text-amber-300/90 shrink-0" aria-hidden />
+                    Pichichi / goleador
+                  </h3>
                   <div className="grid sm:grid-cols-3 gap-3">
                     {[
                       ['topScorer', '1.er puesto'],
@@ -287,7 +291,9 @@ export default function OfficialResultsPanel({ onBack }) {
                       <label key={key} className="block text-xs text-sky-200/90">
                         {label}
                         <input
-                          className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-2.5 text-sm text-white"
+                          list="wc-star-players-official"
+                          className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-2.5 text-sm text-white placeholder:text-slate-500"
+                          placeholder="Jugador (sugerencias)"
                           value={specials[key] || ''}
                           onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
                         />
@@ -296,7 +302,10 @@ export default function OfficialResultsPanel({ onBack }) {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0">Mejor jugador</h3>
+                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0 flex items-center gap-2">
+                    <Star size={16} className="text-amber-300/90 shrink-0" aria-hidden />
+                    Mejor jugador
+                  </h3>
                   <div className="grid sm:grid-cols-3 gap-3">
                     {[
                       ['bestPlayer', '1.er puesto'],
@@ -306,7 +315,9 @@ export default function OfficialResultsPanel({ onBack }) {
                       <label key={key} className="block text-xs text-sky-200/90">
                         {label}
                         <input
-                          className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-2.5 text-sm text-white"
+                          list="wc-star-players-official"
+                          className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-2.5 text-sm text-white placeholder:text-slate-500"
+                          placeholder="Jugador (sugerencias)"
                           value={specials[key] || ''}
                           onChange={e => setSpecials(prev => ({ ...prev, [key]: e.target.value }))}
                         />
@@ -315,22 +326,36 @@ export default function OfficialResultsPanel({ onBack }) {
                   </div>
                 </div>
                 <label className="block text-sm text-sky-200/90 max-w-md">
-                  Máximo asistente
+                  <span className="inline-flex items-center gap-2">
+                    <Share2 size={16} className="text-amber-300/90 shrink-0" aria-hidden />
+                    Máximo asistente
+                  </span>
                   <input
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-3 text-white"
+                    list="wc-star-players-official"
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-3 text-white placeholder:text-slate-500"
+                    placeholder="Jugador (sugerencias)"
                     value={specials.topAssist || ''}
                     onChange={e => setSpecials(prev => ({ ...prev, topAssist: e.target.value }))}
                   />
                 </label>
                 <label className="block text-sm text-sky-200/90 max-w-md">
-                  Guante de oro
+                  <span className="inline-flex items-center gap-2">
+                    <Shield size={16} className="text-amber-300/90 shrink-0" aria-hidden />
+                    Guante de oro
+                  </span>
                   <input
                     list="wc-goalkeepers-official"
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-3 text-white"
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-3 text-white placeholder:text-slate-500"
+                    placeholder="Portero (sugerencias)"
                     value={specials.goldenGlove || ''}
                     onChange={e => setSpecials(prev => ({ ...prev, goldenGlove: e.target.value }))}
                   />
                 </label>
+                <datalist id="wc-star-players-official">
+                  {WORLD_CUP_STAR_PLAYER_OPTIONS.map(name => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
                 <datalist id="wc-goalkeepers-official">
                   {WORLD_CUP_GOALKEEPER_OPTIONS.map(name => (
                     <option key={name} value={name} />
