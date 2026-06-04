@@ -43,6 +43,7 @@ import { WORLD_CUP_GOALKEEPER_OPTIONS } from './worldCup2026Goalkeepers.js'
 import { buildTournamentCalendarDays } from './tournamentCalendar.js'
 import TournamentCalendarModal from './TournamentCalendarModal.jsx'
 import PorraCountdownStrip from './PorraCountdownStrip.jsx'
+import { isPorraPastClosingDeadline } from './porraDeadlines.js'
 import {
   collectPorraSaveWarnings,
   formatPorraSaveWarningsMessage,
@@ -156,6 +157,19 @@ export default function WorldCupPoolApp() {
 
   const tournamentCalendarDays = useMemo(() => buildTournamentCalendarDays(), [])
 
+  const [deadlineClockMs, setDeadlineClockMs] = useState(() => Date.now())
+  useEffect(() => {
+    const tick = () => setDeadlineClockMs(Date.now())
+    tick()
+    const intervalId = window.setInterval(tick, 1000)
+    return () => window.clearInterval(intervalId)
+  }, [])
+
+  const isPorraClosedByDeadline = useMemo(
+    () => isPorraPastClosingDeadline(deadlineClockMs),
+    [deadlineClockMs],
+  )
+
   const [predictions, setPredictions] = useState({})
   const [knockoutScores, setKnockoutScores] = useState({})
 
@@ -240,6 +254,15 @@ export default function WorldCupPoolApp() {
         variant: 'info',
         title: 'Solo lectura',
         message: 'Estás viendo la porra de otro participante. Pulsa «Volver a mi vista» para editar la tuya.',
+      })
+      return
+    }
+    if (isPorraClosedByDeadline) {
+      showModal({
+        variant: 'info',
+        title: 'Plazo cerrado',
+        message:
+          'El plazo para enviar o modificar la porra finalizó el lunes 8 de junio de 2026 a las 23:59 (hora de España).',
       })
       return
     }
@@ -423,7 +446,8 @@ export default function WorldCupPoolApp() {
   }, [savedUsers])
 
   const isViewingOtherPorra = Boolean(porraPreviewUser)
-  const isReadOnly = predictionsLockedGlobally || isViewingOtherPorra
+  const isReadOnly =
+    isPorraClosedByDeadline || predictionsLockedGlobally || isViewingOtherPorra
 
   const activePredictions = useMemo(() => {
     if (!porraPreviewUser?.predictions || typeof porraPreviewUser.predictions !== 'object') {
@@ -507,9 +531,9 @@ export default function WorldCupPoolApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#050d1a] via-[#0a2342] to-[#1a0a28] text-slate-100 scroll-smooth">
+    <div className="min-h-screen bg-gradient-to-br from-[#050d1a] via-[#0a2342] to-[#1a0a28] text-slate-100 scroll-smooth scroll-pt-32">
       <nav
-        className="fixed top-0 left-0 right-0 z-[90] border-b border-white/10 bg-[#060d18]/92 backdrop-blur-md shadow-md shadow-black/30"
+        className="sticky top-0 z-[90] border-b border-white/10 bg-[#060d18]/95 backdrop-blur-md shadow-md shadow-black/30"
         aria-label="Secciones de la porra"
       >
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center sm:justify-start gap-1 sm:gap-2 px-3 py-2">
@@ -552,9 +576,17 @@ export default function WorldCupPoolApp() {
         </div>
       </nav>
 
-      <div className="pt-[3.35rem] sm:pt-14 px-4 md:p-8 pb-10">
+      <div className="px-4 md:px-8 pt-4 md:pt-6 pb-10">
         <div className="max-w-7xl mx-auto space-y-6">
         <PorraCountdownStrip />
+        {isPorraClosedByDeadline ? (
+          <p
+            className="text-sm text-red-200/90 m-0 rounded-xl border border-red-400/30 bg-red-950/35 px-4 py-3"
+            role="status"
+          >
+            El plazo para modificar la porra ha finalizado (8 de junio de 2026, 23:59, hora de España).
+          </p>
+        ) : null}
 
         <div
           id="section-inicio"
@@ -651,7 +683,13 @@ export default function WorldCupPoolApp() {
                       className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 font-bold p-3 flex items-center justify-center gap-2 hover:brightness-110 transition disabled:opacity-50"
                     >
                       {isReadOnly ? <Lock size={18} /> : <Save size={18} />}
-                      {isReadOnly ? (isViewingOtherPorra ? 'Solo lectura' : 'Bloqueado') : 'Guardar'}
+                      {isReadOnly
+                        ? isViewingOtherPorra
+                          ? 'Solo lectura'
+                          : isPorraClosedByDeadline
+                            ? 'Plazo cerrado'
+                            : 'Bloqueado'
+                        : 'Guardar'}
                     </button>
                     <button
                       type="button"
@@ -708,7 +746,13 @@ export default function WorldCupPoolApp() {
                       className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 font-bold p-3 flex items-center justify-center gap-2 hover:brightness-110 transition disabled:opacity-50"
                     >
                       {isReadOnly ? <Lock size={18} /> : <Save size={18} />}
-                      {isReadOnly ? (isViewingOtherPorra ? 'Solo lectura' : 'Bloqueado') : 'Guardar'}
+                      {isReadOnly
+                        ? isViewingOtherPorra
+                          ? 'Solo lectura'
+                          : isPorraClosedByDeadline
+                            ? 'Plazo cerrado'
+                            : 'Bloqueado'
+                        : 'Guardar'}
                     </button>
                   </div>
                 </>

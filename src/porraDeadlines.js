@@ -16,6 +16,11 @@ export function millisecondsRemainingUntil(targetMs, nowMs = Date.now()) {
   return Math.max(0, targetMs - nowMs)
 }
 
+/** True cuando ya pasó el cierre de envío de la porra (8 jun 2026, 23:59 España). */
+export function isPorraPastClosingDeadline(nowMs = Date.now()) {
+  return nowMs > PORRA_CLOSING_AT_MS
+}
+
 /**
  * @param {number} remainingMs
  */
