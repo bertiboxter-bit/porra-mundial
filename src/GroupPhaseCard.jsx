@@ -32,7 +32,10 @@ export default function GroupPhaseCard({
   }
 
   return (
-    <div className="rounded-3xl border border-[#2a6fb0]/35 bg-gradient-to-br from-slate-900/80 to-[#061525]/90 p-5 shadow-lg">
+    <div
+      data-porra-target={`group-card-${group}`}
+      className="rounded-3xl border border-[#2a6fb0]/35 bg-gradient-to-br from-slate-900/80 to-[#061525]/90 p-5 shadow-lg scroll-mt-32"
+    >
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-sky-200">
           Grupo {group}
@@ -42,7 +45,11 @@ export default function GroupPhaseCard({
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="space-y-3">
           {groupMatches.map(match => (
-            <div key={match.id} className="rounded-2xl border border-white/10 bg-black/25 p-3">
+            <div
+              key={match.id}
+              data-porra-target={`group-match-${match.id}`}
+              className="rounded-2xl border border-white/10 bg-black/25 p-3 scroll-mt-32"
+            >
               <div className="text-xs text-sky-200/80 mb-2 text-left flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span>
                   <span className="font-bold text-amber-200/90">Jornada {match.matchday}</span>

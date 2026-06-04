@@ -101,7 +101,10 @@ export default function GroupTieBreakPanel({ group, predictions, setPredictions,
   }
 
   return (
-    <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/[0.07] p-3 text-xs text-sky-100/90">
+    <div
+      data-porra-target={`tie-group-${group}`}
+      className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/[0.07] p-3 text-xs text-sky-100/90 scroll-mt-32"
+    >
       <p className="font-semibold text-amber-200/95 m-0 mb-2">
         Si varios equipos empatan a puntos, primero se aplica el enfrentamiento directo entre ellos
         (pts, DG y GF en esos cruces). Si tras eso siguen empatados en todo lo automático, ordena

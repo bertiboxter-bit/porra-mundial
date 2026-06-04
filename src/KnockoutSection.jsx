@@ -33,7 +33,10 @@ function MatchCard({
     'w-11 sm:w-12 rounded-lg border border-white/20 bg-black/30 p-1.5 sm:p-2 text-center text-sm disabled:opacity-40'
 
   return (
-    <div className="rounded-2xl border border-[#2a6fb0]/40 bg-gradient-to-br from-[#0a2342]/90 to-[#051525]/95 p-4 text-left flex flex-col gap-2 shadow-lg shadow-black/30">
+    <div
+      data-porra-target={`knockout-${scoreKey}`}
+      className="rounded-2xl border border-[#2a6fb0]/40 bg-gradient-to-br from-[#0a2342]/90 to-[#051525]/95 p-4 text-left flex flex-col gap-2 shadow-lg shadow-black/30 scroll-mt-32"
+    >
       <div className="flex justify-between items-start gap-2 flex-wrap">
         <span className="text-[11px] font-bold uppercase tracking-wider text-[#7ec8ff]">
           {title}

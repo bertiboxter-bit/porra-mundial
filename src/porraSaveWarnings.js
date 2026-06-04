@@ -1,39 +1,7 @@
 import { GROUP_STAGE_MATCHES } from './worldCup2026Data.js'
 import { computeFullKnockout, listPendingGroupTieBreaks } from './bracketLogic.js'
 import { mergeSpecials } from './porraSpecials.js'
-
-/**
- * @param {unknown} cell
- */
-function scoreCellIsComplete(cell) {
-  if (!cell || typeof cell !== 'object') return false
-  const row = /** @type {{ home?: unknown, away?: unknown }} */ (cell)
-  const homeRaw = row.home
-  const awayRaw = row.away
-  if (homeRaw === '' || homeRaw == null || awayRaw === '' || awayRaw == null) return false
-  const home = Number(homeRaw)
-  const away = Number(awayRaw)
-  return !Number.isNaN(home) && !Number.isNaN(away)
-}
-
-/**
- * @param {string | null | undefined} homeTeam
- * @param {string | null | undefined} awayTeam
- * @param {unknown} cell
- */
-function knockoutMatchIncomplete(homeTeam, awayTeam, cell) {
-  if (!homeTeam || !awayTeam) return false
-  if (!scoreCellIsComplete(cell)) return true
-  const row = /** @type {{ home?: unknown, away?: unknown, pensHome?: unknown, pensAway?: unknown }} */ (
-    cell
-  )
-  const home = Number(row.home)
-  const away = Number(row.away)
-  if (home !== away) return false
-  const pensHome = Number(row.pensHome)
-  const pensAway = Number(row.pensAway)
-  return Number.isNaN(pensHome) || Number.isNaN(pensAway)
-}
+import { scoreCellIsComplete, knockoutMatchIncomplete } from './porraProgress.js'
 
 /**
  * @param {Record<string, unknown>} predictions
