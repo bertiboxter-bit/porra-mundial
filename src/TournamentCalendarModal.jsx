@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { CalendarDays, X } from 'lucide-react'
+import { getTodayCalendarKeyMadrid } from './tournamentCalendar.js'
 
 /**
  * @param {{
@@ -9,6 +10,11 @@ import { CalendarDays, X } from 'lucide-react'
  * }} props
  */
 export default function TournamentCalendarModal({ open, onClose, days }) {
+  const todayKey = useMemo(
+    () => (open ? getTodayCalendarKeyMadrid() : ''),
+    [open],
+  )
+
   useEffect(() => {
     if (!open) return
     const onKey = e => {
@@ -17,6 +23,12 @@ export default function TournamentCalendarModal({ open, onClose, days }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
+
+  useEffect(() => {
+    if (!open) return
+    const el = document.getElementById(`calendar-day-${todayKey}`)
+    el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [open, todayKey])
 
   if (!open) return null
 
@@ -61,12 +73,30 @@ export default function TournamentCalendarModal({ open, onClose, days }) {
           {days.length === 0 ? (
             <p className="text-sm text-slate-400 m-0">No hay partidos en el calendario.</p>
           ) : (
-            days.map(day => (
+            days.map(day => {
+              const isToday = day.sortKey === todayKey
+              return (
               <section
                 key={day.sortKey}
-                className="rounded-xl border border-white/10 bg-black/25 overflow-hidden"
+                id={`calendar-day-${day.sortKey}`}
+                className={`rounded-xl border overflow-hidden ${
+                  isToday
+                    ? 'border-emerald-400/55 bg-emerald-950/35 shadow-[0_0_20px_rgba(52,211,153,0.12)]'
+                    : 'border-white/10 bg-black/25'
+                }`}
               >
-                <h3 className="text-sm font-bold text-amber-200/95 m-0 px-3 py-2 bg-amber-500/10 border-b border-white/10">
+                <h3
+                  className={`text-sm font-bold m-0 px-3 py-2 border-b flex items-center gap-2 ${
+                    isToday
+                      ? 'text-emerald-100 bg-emerald-500/25 border-emerald-400/35'
+                      : 'text-amber-200/95 bg-amber-500/10 border-white/10'
+                  }`}
+                >
+                  {isToday ? (
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/40 text-emerald-50">
+                      Hoy
+                    </span>
+                  ) : null}
                   {day.label}
                 </h3>
                 <ul className="list-none m-0 p-0 divide-y divide-white/5">
@@ -91,7 +121,7 @@ export default function TournamentCalendarModal({ open, onClose, days }) {
                   ))}
                 </ul>
               </section>
-            ))
+            )})
           )}
         </div>
       </div>

@@ -55,6 +55,7 @@ export const GROUP_STAGE_MATCHES = GROUP_STAGE_FIXTURES.map(f => ({
   away: f.away,
   dateLabel: GROUP_MATCHDAY_LABEL[f.matchday],
   kickoffLabelEs: f.kickoffLabelEs,
+  kickoffUtc: f.kickoffUtc,
   fifaCentreId: f.fifaCentreId,
 })).sort((a, b) => a.fifa - b.fifa)
 

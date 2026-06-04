@@ -23,20 +23,56 @@ function calendarDateKeyMadrid(isoUtc) {
   }).format(new Date(isoUtc))
 }
 
+/** Fecha de hoy en calendario de España (YYYY-MM-DD). */
+export function getTodayCalendarKeyMadrid() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: MADRID_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
 /**
  * @param {string} dateKey YYYY-MM-DD
  */
 function formatCalendarDayLabel(dateKey) {
   const [y, m, d] = dateKey.split('-').map(Number)
-  const noonUtc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0))
   const label = new Intl.DateTimeFormat('es-ES', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
     timeZone: MADRID_TZ,
-  }).format(noonUtc)
+  }).format(new Date(Date.UTC(y, m - 1, d, 12, 0, 0)))
   return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+/**
+ * @param {string} kickoffLabelEs
+ * @returns {string | null}
+ */
+function calendarDateKeyFromKickoffLabel(kickoffLabelEs) {
+  const match = kickoffLabelEs.match(/(\d{1,2})\s+(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)\s+(\d{4})/i)
+  if (!match) return null
+  const monthMap = {
+    ene: '01',
+    feb: '02',
+    mar: '03',
+    abr: '04',
+    may: '05',
+    jun: '06',
+    jul: '07',
+    ago: '08',
+    sep: '09',
+    oct: '10',
+    nov: '11',
+    dic: '12',
+  }
+  const month = monthMap[match[2].toLowerCase()]
+  if (!month) return null
+  const day = String(match[1]).padStart(2, '0')
+  return `${match[3]}-${month}-${day}`
 }
 
 /**
@@ -70,8 +106,12 @@ export function buildTournamentCalendarDays() {
   }
 
   for (const match of GROUP_STAGE_MATCHES) {
-    if (!match.kickoffUtc) continue
-    const dateKey = calendarDateKeyMadrid(match.kickoffUtc)
+    const dateKey =
+      (match.kickoffUtc && calendarDateKeyMadrid(match.kickoffUtc)) ||
+      (typeof match.kickoffLabelEs === 'string'
+        ? calendarDateKeyFromKickoffLabel(match.kickoffLabelEs)
+        : null)
+    if (!dateKey) continue
     const kickoff =
       typeof match.kickoffLabelEs === 'string'
         ? match.kickoffLabelEs.split('·').pop()?.trim()

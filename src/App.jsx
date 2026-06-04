@@ -16,6 +16,7 @@ import {
   LayoutGrid,
   CalendarDays,
   Shield,
+  Share2,
 } from 'lucide-react'
 import {
   GROUP_LETTERS,
@@ -537,6 +538,14 @@ export default function WorldCupPoolApp() {
               {label}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setCalendarOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-emerald-200/95 hover:bg-emerald-400/15 border border-emerald-400/30 transition"
+          >
+            <CalendarDays size={16} className="opacity-90 shrink-0" aria-hidden />
+            Calendario
+          </button>
           <a
             href={FIFA_FIXTURES_URL}
             target="_blank"
@@ -552,25 +561,6 @@ export default function WorldCupPoolApp() {
 
       <div className="pt-[3.35rem] sm:pt-14 px-4 md:p-8 pb-10">
         <div className="max-w-7xl mx-auto space-y-6">
-        <div className="scroll-mt-28 rounded-2xl border border-cyan-400/20 bg-slate-900/45 backdrop-blur-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-white m-0 flex items-center gap-2">
-              <CalendarDays size={18} className="text-amber-300 shrink-0" aria-hidden />
-              Calendario del torneo
-            </p>
-            <p className="text-xs text-sky-200/75 mt-1 mb-0 leading-snug">
-              Consulta qué partidos se juegan cada día (grupos y eliminatorias).
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setCalendarOpen(true)}
-            className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400/90 to-amber-500 text-slate-900 font-bold px-5 py-2.5 text-sm hover:brightness-110 transition"
-          >
-            Abrir calendario
-          </button>
-        </div>
-
         <div
           id="section-inicio"
           className="scroll-mt-28 relative overflow-hidden rounded-3xl border border-amber-400/25 bg-gradient-to-r from-[#003875]/95 via-[#005a9c]/90 to-[#002a52]/95 p-8 shadow-2xl shadow-black/50"
@@ -883,7 +873,10 @@ export default function WorldCupPoolApp() {
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0">Podio (equipos)</h3>
+                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0 flex items-center gap-2">
+                    <Trophy size={16} className="text-amber-300/90 shrink-0" aria-hidden />
+                    Podio (equipos)
+                  </h3>
                   <div className="grid sm:grid-cols-3 gap-3">
                     {[
                       ['champion', 'Campeón', podiumTeams.champion],
@@ -907,7 +900,10 @@ export default function WorldCupPoolApp() {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0">Pichichi / goleador</h3>
+                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0 flex items-center gap-2">
+                    <Goal size={16} className="text-amber-300/90 shrink-0" aria-hidden />
+                    Pichichi / goleador
+                  </h3>
                   <div className="grid sm:grid-cols-3 gap-3">
                     {[
                       ['topScorer', '1.er puesto'],
@@ -930,7 +926,10 @@ export default function WorldCupPoolApp() {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0">Mejor jugador</h3>
+                  <h3 className="text-sm font-semibold text-amber-200/90 mb-2 m-0 flex items-center gap-2">
+                    <Star size={16} className="text-amber-300/90 shrink-0" aria-hidden />
+                    Mejor jugador
+                  </h3>
                   <div className="grid sm:grid-cols-3 gap-3">
                     {[
                       ['bestPlayer', '1.er puesto'],
@@ -959,7 +958,10 @@ export default function WorldCupPoolApp() {
                 </datalist>
 
                 <label className="block text-sm text-sky-200/90 max-w-md">
-                  Máximo asistente
+                  <span className="inline-flex items-center gap-2">
+                    <Share2 size={16} className="text-amber-300/90 shrink-0" aria-hidden />
+                    Máximo asistente
+                  </span>
                   <input
                     disabled={isReadOnly}
                     list="wc-star-players"
