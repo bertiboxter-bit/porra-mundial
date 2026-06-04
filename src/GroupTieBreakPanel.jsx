@@ -10,9 +10,21 @@ import {
 } from './bracketLogic.js'
 
 /**
- * @param {{ group: string, predictions: Record<string, unknown>, setPredictions: Function, disabled?: boolean }} props
+ * @param {{
+ *   group: string,
+ *   predictions: Record<string, unknown>,
+ *   setPredictions: Function,
+ *   disabled?: boolean,
+ *   requireExplicitConfirm?: boolean,
+ * }} props
  */
-export default function GroupTieBreakPanel({ group, predictions, setPredictions, disabled }) {
+export default function GroupTieBreakPanel({
+  group,
+  predictions,
+  setPredictions,
+  disabled,
+  requireExplicitConfirm = true,
+}) {
   const teams = GROUPS[group]
   const groupMatches = useMemo(
     () => GROUP_STAGE_MATCHES.filter(m => m.group === group),
@@ -106,26 +118,42 @@ export default function GroupTieBreakPanel({ group, predictions, setPredictions,
       className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/[0.07] p-3 text-xs text-sky-100/90 scroll-mt-32"
     >
       <p className="font-semibold text-amber-200/95 m-0 mb-2">
-        Si varios equipos empatan a puntos, primero se aplica el enfrentamiento directo entre ellos
-        (pts, DG y GF en esos cruces). Si tras eso siguen empatados en todo lo automático, ordena
-        manualmente y pulsa <span className="text-white">Confirmar orden</span>. Sin confirmar, no se
-        podrá guardar la porra.
+        {requireExplicitConfirm ? (
+          <>
+            Si varios equipos empatan a puntos, primero se aplica el enfrentamiento directo entre ellos
+            (pts, DG y GF en esos cruces). Si tras eso siguen empatados en todo lo automático, ordena
+            manualmente y pulsa <span className="text-white">Confirmar orden</span>. Sin confirmar, no se
+            podrá guardar la porra.
+          </>
+        ) : (
+          <>
+            Si varios equipos empatan a puntos, primero se aplica el enfrentamiento directo. Si aún siguen
+            empatados, puedes ajustar el orden con las flechas; al guardar resultados oficiales se usará la
+            clasificación mostrada (no hace falta confirmar).
+          </>
+        )}
       </p>
       <ul className="list-none m-0 p-0 space-y-3">
         {runs.map(run => {
           const saved = tieMap[run.signature]
           const order = tieOrderIsValidForCluster(saved, run.teams) ? saved : run.teams
-          const confirmed = tieOrderIsValidForCluster(saved, run.teams)
+          const hasSavedOrder = tieOrderIsValidForCluster(saved, run.teams)
 
           return (
             <li key={run.signature} className="rounded-lg bg-black/25 p-2">
-              {!confirmed ? (
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-300/95 m-0 mb-2">
-                  Pendiente de confirmar
-                </p>
+              {requireExplicitConfirm ? (
+                !hasSavedOrder ? (
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-300/95 m-0 mb-2">
+                    Pendiente de confirmar
+                  </p>
+                ) : (
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300/90 m-0 mb-2">
+                    Orden confirmado
+                  </p>
+                )
               ) : (
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300/90 m-0 mb-2">
-                  Orden confirmado
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-sky-200/90 m-0 mb-2">
+                  {hasSavedOrder ? 'Orden manual aplicado' : 'Orden según clasificación actual'}
                 </p>
               )}
               <div className="flex flex-wrap items-center gap-1.5">
@@ -155,20 +183,32 @@ export default function GroupTieBreakPanel({ group, predictions, setPredictions,
                     </button>
                   </span>
                 ))}
-                <button
-                  type="button"
-                  onClick={() => confirmCluster(run.signature, run.teams, order)}
-                  className="ml-1 rounded-md border border-emerald-400/40 bg-emerald-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-200 hover:bg-emerald-500/25"
-                >
-                  Confirmar orden
-                </button>
-                {confirmed ? (
+                {requireExplicitConfirm ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => confirmCluster(run.signature, run.teams, order)}
+                      className="ml-1 rounded-md border border-emerald-400/40 bg-emerald-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-200 hover:bg-emerald-500/25"
+                    >
+                      Confirmar orden
+                    </button>
+                    {hasSavedOrder ? (
+                      <button
+                        type="button"
+                        onClick={() => clearCluster(run.signature)}
+                        className="text-[10px] uppercase tracking-wide text-sky-300/90 hover:text-white underline-offset-2 hover:underline"
+                      >
+                        Deshacer confirmación
+                      </button>
+                    ) : null}
+                  </>
+                ) : hasSavedOrder ? (
                   <button
                     type="button"
                     onClick={() => clearCluster(run.signature)}
                     className="text-[10px] uppercase tracking-wide text-sky-300/90 hover:text-white underline-offset-2 hover:underline"
                   >
-                    Deshacer confirmación
+                    Restablecer orden automático
                   </button>
                 ) : null}
               </div>

@@ -212,6 +212,44 @@ export function listPendingGroupTieBreaks(predictions) {
 }
 
 /**
+ * Rellena órdenes de desempate pendientes con la clasificación mostrada en la tabla
+ * (después de criterios FIFA automáticos). Útil en resultados oficiales sin «Confirmar orden».
+ * @param {Record<string, unknown>} predictions
+ * @returns {Record<string, unknown>}
+ */
+export function applyDefaultTieOrdersToPredictions(predictions) {
+  const base = predictions && typeof predictions === 'object' ? { ...predictions } : {}
+  /** @type {Record<string, Record<string, string[]>>} */
+  const tieRoot =
+    base[GROUP_TIE_BREAK_KEY] && typeof base[GROUP_TIE_BREAK_KEY] === 'object'
+      ? { .../** @type {Record<string, Record<string, string[]>>} */ (base[GROUP_TIE_BREAK_KEY]) }
+      : {}
+
+  GROUP_LETTERS.forEach(groupLetter => {
+    const teams = GROUPS[groupLetter]
+    const matches = GROUP_STAGE_MATCHES.filter(match => match.group === groupLetter)
+    const table = calculateGroupTable(base, teams, matches, groupLetter)
+    const prevGroup = tieRoot[groupLetter]
+    const groupMap = prevGroup && typeof prevGroup === 'object' ? { ...prevGroup } : {}
+    let groupChanged = false
+
+    for (const run of findGroupTieRuns(table)) {
+      if (tieOrderIsValidForCluster(groupMap[run.signature], run.teams)) continue
+      const clusterSet = new Set(run.teams)
+      const orderFromTable = table.filter(row => clusterSet.has(row.team)).map(row => row.team)
+      groupMap[run.signature] =
+        orderFromTable.length === run.teams.length ? orderFromTable : [...run.teams]
+      groupChanged = true
+    }
+
+    if (groupChanged) tieRoot[groupLetter] = groupMap
+  })
+
+  if (Object.keys(tieRoot).length === 0) return base
+  return { ...base, [GROUP_TIE_BREAK_KEY]: tieRoot }
+}
+
+/**
  * @param {Record<string, unknown>} predictions
  * @param {string[]} teams
  * @param {{ id: number, home: string, away: string }[]} matches

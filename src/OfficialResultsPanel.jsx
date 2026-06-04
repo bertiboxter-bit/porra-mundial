@@ -7,6 +7,7 @@ import {
   calculateGroupTable,
   computeFullKnockout,
   applyKnockoutScorePatch,
+  applyDefaultTieOrdersToPredictions,
 } from './bracketLogic.js'
 import KnockoutSection from './KnockoutSection.jsx'
 import { TeamNameWithFlag } from './TeamFlag.jsx'
@@ -106,9 +107,11 @@ export default function OfficialResultsPanel({ onBack }) {
   const handleSave = async () => {
     setSaveBusy(true)
     try {
+      const predictionsToSave = applyDefaultTieOrdersToPredictions(predictions)
+      setPredictions(predictionsToSave)
       const registradoPor = normalizeOfficialSavedByName(savedByName)
       await saveOfficialAndRecalculatePoints({
-        predictions,
+        predictions: predictionsToSave,
         knockout: knockoutScores,
         specials,
         savedByName: registradoPor,
@@ -291,6 +294,7 @@ export default function OfficialResultsPanel({ onBack }) {
                             group={group}
                             predictions={predictions}
                             setPredictions={setPredictions}
+                            requireExplicitConfirm={false}
                           />
                         </div>
                       </div>
