@@ -22,7 +22,6 @@ import {
   GROUP_LETTERS,
   computeFullKnockout,
   applyKnockoutScorePatch,
-  listPendingGroupTieBreaks,
   buildGroupQualificationStatus,
 } from './bracketLogic.js'
 import KnockoutSection from './KnockoutSection.jsx'
@@ -43,6 +42,11 @@ import { WORLD_CUP_STAR_PLAYER_OPTIONS } from './worldCup2026StarPlayers.js'
 import { WORLD_CUP_GOALKEEPER_OPTIONS } from './worldCup2026Goalkeepers.js'
 import { buildTournamentCalendarDays } from './tournamentCalendar.js'
 import TournamentCalendarModal from './TournamentCalendarModal.jsx'
+import PorraCountdownStrip from './PorraCountdownStrip.jsx'
+import {
+  collectPorraSaveWarnings,
+  formatPorraSaveWarningsMessage,
+} from './porraSaveWarnings.js'
 import {
   USERNAME_STORAGE_KEY,
   normalizeUsername,
@@ -287,18 +291,7 @@ export default function WorldCupPoolApp() {
       })
       return
     }
-    const pendingTies = listPendingGroupTieBreaks(predictions)
-    if (pendingTies.length > 0) {
-      const detail = pendingTies
-        .map(p => `grupo ${p.group} (${p.teams.join(', ')})`)
-        .join('; ')
-      showModal({
-        variant: 'error',
-        title: 'Empates sin confirmar',
-        message: `Hay equipos empatados a todo en fase de grupos. Ordena cada bloque y pulsa «Confirmar orden» antes de guardar: ${detail}.`,
-      })
-      return
-    }
+    const saveWarnings = collectPorraSaveWarnings(predictions, knockoutScores, specials)
     try {
       const { data: prior } = await supabase.from('predictions').select('points').eq('username', u).maybeSingle()
       const { error } = await supabase.from('predictions').upsert(
@@ -328,9 +321,9 @@ export default function WorldCupPoolApp() {
       setSavedUsers(fresh)
       setSessionConnected(true)
       showModal({
-        variant: 'success',
-        title: 'Porra guardada',
-        message: 'Los datos se han guardado correctamente en la base de datos.',
+        variant: saveWarnings.length > 0 ? 'info' : 'success',
+        title: saveWarnings.length > 0 ? 'Porra guardada · datos pendientes' : 'Porra guardada',
+        message: formatPorraSaveWarningsMessage(saveWarnings),
       })
     } catch (e) {
       console.error(e)
@@ -561,6 +554,8 @@ export default function WorldCupPoolApp() {
 
       <div className="pt-[3.35rem] sm:pt-14 px-4 md:p-8 pb-10">
         <div className="max-w-7xl mx-auto space-y-6">
+        <PorraCountdownStrip />
+
         <div
           id="section-inicio"
           className="scroll-mt-28 relative overflow-hidden rounded-3xl border border-amber-400/25 bg-gradient-to-r from-[#003875]/95 via-[#005a9c]/90 to-[#002a52]/95 p-8 shadow-2xl shadow-black/50"
