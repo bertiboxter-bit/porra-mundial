@@ -19,6 +19,9 @@ import {
   Share2,
   BarChart3,
   FileText,
+  ArrowUp,
+  ArrowDown,
+  Minus,
 } from 'lucide-react'
 import {
   GROUP_LETTERS,
@@ -73,6 +76,12 @@ import {
   collectGroupMatchPredictions,
   collectKnockoutMatchPredictions,
 } from './matchPredictions.js'
+import {
+  sortRankingUsers,
+  enrichRankingRows,
+  formatRankMovementLabel,
+  formatGapAboveLabel,
+} from './rankingUtils.js'
 
 const OFFICIAL_HASH = '#resultados-oficiales'
 
@@ -449,16 +458,10 @@ export default function WorldCupPoolApp() {
     setSpecials(defaultSpecials())
   }
 
-  const ranking = useMemo(() => {
-    const list = Array.isArray(savedUsers) ? savedUsers : []
-    return [...list].sort((a, b) => {
-      const dp = (b.points ?? 0) - (a.points ?? 0)
-      if (dp !== 0) return dp
-      const dt = String(b.updatedAt ?? '').localeCompare(String(a.updatedAt ?? ''))
-      if (dt !== 0) return dt
-      return String(a.username ?? a.nickname ?? '').localeCompare(String(b.username ?? b.nickname ?? ''))
-    })
-  }, [savedUsers])
+  const ranking = useMemo(
+    () => enrichRankingRows(sortRankingUsers(savedUsers)),
+    [savedUsers],
+  )
 
   const isViewingOtherPorra = Boolean(porraPreviewUser)
   const isReadOnly =
@@ -1157,7 +1160,8 @@ export default function WorldCupPoolApp() {
               </div>
               <p className="text-xs text-sky-200/70 mb-4 leading-snug m-0">
                 Orden por puntos tras usar el panel de resultados oficiales (enlace en Inicio) y pulsar «Guardar
-                y recalcular puntos». Con la porra bloqueada, pulsa un nombre para ver su pronóstico en modo lectura.
+                y recalcular puntos». Flechas: subida o bajada de puesto en el último recálculo; debajo, distancia en
+                puntos con el de arriba. Con la porra bloqueada, pulsa un nombre para ver su pronóstico en modo lectura.
                 Pulsa la cifra de puntos para el desglose.
               </p>
 
@@ -1166,32 +1170,72 @@ export default function WorldCupPoolApp() {
                   <div className="text-slate-400 text-sm">Todavía no hay usuarios registrados.</div>
                 )}
 
-                {ranking.map((user, index) => (
+                {ranking.map(user => {
+                  const gapLabel = formatGapAboveLabel(user)
+                  const movementLabel = formatRankMovementLabel(user.movement)
+
+                  return (
                   <div
-                    key={user.username || user.nickname || index}
-                    className={`rounded-2xl border p-4 flex items-center justify-between ${
+                    key={user.username || user.nickname || user.rank}
+                    className={`rounded-2xl border p-4 flex items-center justify-between gap-3 ${
                       porraPreviewUser?.username === user.username
                         ? 'border-amber-400/40 bg-amber-950/25'
                         : 'border-white/10 bg-black/30'
                     }`}
                   >
                     <div className="min-w-0 flex-1 pr-2">
-                      {predictionsLockedGlobally ? (
-                        <button
-                          type="button"
-                          onClick={() => openPorraPreview(user)}
-                          className={`font-bold text-left hover:text-amber-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 rounded px-0.5 -mx-0.5 ${
-                            porraPreviewUser?.username === user.username
-                              ? 'text-amber-200 underline decoration-amber-400/50'
-                              : 'text-white'
-                          }`}
-                          title="Ver porra en modo lectura"
-                        >
-                          #{index + 1} {rankingDisplayName(user)}
-                        </button>
-                      ) : (
-                        <div className="font-bold text-white">
-                          #{index + 1} {rankingDisplayName(user)}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {predictionsLockedGlobally ? (
+                          <button
+                            type="button"
+                            onClick={() => openPorraPreview(user)}
+                            className={`font-bold text-left hover:text-amber-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 rounded px-0.5 -mx-0.5 ${
+                              porraPreviewUser?.username === user.username
+                                ? 'text-amber-200 underline decoration-amber-400/50'
+                                : 'text-white'
+                            }`}
+                            title="Ver porra en modo lectura"
+                          >
+                            #{user.rank} {rankingDisplayName(user)}
+                          </button>
+                        ) : (
+                          <div className="font-bold text-white">
+                            #{user.rank} {rankingDisplayName(user)}
+                          </div>
+                        )}
+
+                        {movementLabel != null && (
+                          <span
+                            className={`inline-flex items-center gap-0.5 text-xs font-bold tabular-nums rounded-md px-1.5 py-0.5 ${
+                              user.movement > 0
+                                ? 'text-emerald-300 bg-emerald-500/15'
+                                : user.movement < 0
+                                  ? 'text-rose-300 bg-rose-500/15'
+                                  : 'text-slate-400 bg-white/5'
+                            }`}
+                            title="Variación de puesto en el último recálculo oficial"
+                          >
+                            {user.movement > 0 ? (
+                              <ArrowUp size={14} aria-hidden />
+                            ) : user.movement < 0 ? (
+                              <ArrowDown size={14} aria-hidden />
+                            ) : (
+                              <Minus size={14} aria-hidden />
+                            )}
+                            {movementLabel}
+                          </span>
+                        )}
+                      </div>
+
+                      {(gapLabel || user.pointsDelta != null) && (
+                        <div className="text-xs text-sky-200/75 mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                          {gapLabel && <span>{gapLabel}</span>}
+                          {user.pointsDelta != null && user.pointsDelta !== 0 && (
+                            <span className="text-amber-200/80 tabular-nums">
+                              {user.pointsDelta > 0 ? '+' : ''}
+                              {user.pointsDelta} pts últ. recálculo
+                            </span>
+                          )}
                         </div>
                       )}
 
@@ -1213,7 +1257,8 @@ export default function WorldCupPoolApp() {
                       {user.points ?? 0}
                     </button>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 

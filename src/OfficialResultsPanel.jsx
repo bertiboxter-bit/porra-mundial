@@ -16,7 +16,17 @@ import ScoreInput from './ScoreInput.jsx'
 import { getGroupMatchKickoffLabelEs } from './groupMatchKickoffs.js'
 import { sanitizeScoreInput } from './scoreInput.js'
 import MessageModal from './MessageModal.jsx'
-import { fetchOfficialState, saveOfficialAndRecalculatePoints } from './officialResultsService.js'
+import {
+  fetchOfficialState,
+  fetchOfficialResultsLog,
+  saveOfficialAndRecalculatePoints,
+} from './officialResultsService.js'
+import OfficialResultsHistory from './OfficialResultsHistory.jsx'
+import {
+  readOfficialAdminName,
+  writeOfficialAdminName,
+  normalizeOfficialSavedByName,
+} from './officialAdminName.js'
 import { mergeSpecials } from './porraSpecials.js'
 import { WORLD_CUP_GOALKEEPER_OPTIONS } from './worldCup2026Goalkeepers.js'
 import { WORLD_CUP_STAR_PLAYER_OPTIONS } from './worldCup2026StarPlayers.js'
@@ -28,6 +38,9 @@ export default function OfficialResultsPanel({ onBack }) {
   const [loadBusy, setLoadBusy] = useState(true)
   const [saveBusy, setSaveBusy] = useState(false)
   const [modal, setModal] = useState(null)
+  const [savedByName, setSavedByName] = useState(() => readOfficialAdminName())
+  const [historyRows, setHistoryRows] = useState([])
+  const [historyError, setHistoryError] = useState(false)
 
   const closeModal = useCallback(() => setModal(null), [])
   const showModal = useCallback(payload => {
@@ -38,12 +51,19 @@ export default function OfficialResultsPanel({ onBack }) {
     })
   }, [])
 
+  const loadOfficialResultsHistory = useCallback(async () => {
+    const { rows, error } = await fetchOfficialResultsLog()
+    setHistoryRows(rows)
+    setHistoryError(Boolean(error))
+  }, [])
+
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       setLoadBusy(true)
       try {
         const st = await fetchOfficialState()
+        if (!cancelled) await loadOfficialResultsHistory()
         if (cancelled) return
         if (st) {
           setPredictions(st.predictions || {})
@@ -67,7 +87,12 @@ export default function OfficialResultsPanel({ onBack }) {
     return () => {
       cancelled = true
     }
-  }, [showModal])
+  }, [showModal, loadOfficialResultsHistory])
+
+  const handleSavedByNameChange = useCallback(value => {
+    setSavedByName(value)
+    writeOfficialAdminName(value)
+  }, [])
 
   const fullBracket = useMemo(
     () => computeFullKnockout(predictions, knockoutScores),
@@ -81,11 +106,18 @@ export default function OfficialResultsPanel({ onBack }) {
   const handleSave = async () => {
     setSaveBusy(true)
     try {
-      await saveOfficialAndRecalculatePoints({ predictions, knockout: knockoutScores, specials })
+      const registradoPor = normalizeOfficialSavedByName(savedByName)
+      await saveOfficialAndRecalculatePoints({
+        predictions,
+        knockout: knockoutScores,
+        specials,
+        savedByName: registradoPor,
+      })
+      await loadOfficialResultsHistory()
       showModal({
         variant: 'success',
         title: 'Guardado',
-        message: 'Resultados oficiales guardados y puntos de todos los participantes recalculados.',
+        message: `Resultados oficiales guardados por ${registradoPor}. Puntos y clasificación actualizados para todos los participantes.`,
       })
     } catch (e) {
       console.error(e)
@@ -131,6 +163,13 @@ export default function OfficialResultsPanel({ onBack }) {
             {saveBusy ? 'Guardando…' : 'Guardar y recalcular puntos'}
           </button>
         </header>
+
+        <OfficialResultsHistory
+          historyRows={historyRows}
+          historyError={historyError}
+          savedByName={savedByName}
+          onSavedByNameChange={handleSavedByNameChange}
+        />
 
         {loadBusy ? (
           <div className="text-center text-sky-200 py-20">Cargando datos oficiales…</div>
