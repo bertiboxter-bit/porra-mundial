@@ -11,6 +11,7 @@ export function defaultSpecials() {
     bestPlayer2: '',
     bestPlayer3: '',
     topAssist: '',
+    goldenGlove: '',
   }
 }
 

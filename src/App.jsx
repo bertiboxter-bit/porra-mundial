@@ -15,6 +15,7 @@ import {
   LayoutList,
   LayoutGrid,
   CalendarDays,
+  Shield,
 } from 'lucide-react'
 import {
   GROUP_LETTERS,
@@ -38,6 +39,9 @@ import { getScoreBreakdown } from './scoring.js'
 import { defaultSpecials, mergeSpecials } from './porraSpecials.js'
 import { podiumTeamsFromBracket } from './porraBracketPodium.js'
 import { WORLD_CUP_STAR_PLAYER_OPTIONS } from './worldCup2026StarPlayers.js'
+import { WORLD_CUP_GOALKEEPER_OPTIONS } from './worldCup2026Goalkeepers.js'
+import { buildTournamentCalendarDays } from './tournamentCalendar.js'
+import TournamentCalendarModal from './TournamentCalendarModal.jsx'
 import {
   USERNAME_STORAGE_KEY,
   normalizeUsername,
@@ -143,6 +147,9 @@ export default function WorldCupPoolApp() {
   const [lockModalMode, setLockModalMode] = useState(null)
   const [porraPreviewUser, setPorraPreviewUser] = useState(null)
   const [matchPredictionsModal, setMatchPredictionsModal] = useState(null)
+  const [calendarOpen, setCalendarOpen] = useState(false)
+
+  const tournamentCalendarDays = useMemo(() => buildTournamentCalendarDays(), [])
 
   const [predictions, setPredictions] = useState({})
   const [knockoutScores, setKnockoutScores] = useState({})
@@ -545,6 +552,25 @@ export default function WorldCupPoolApp() {
 
       <div className="pt-[3.35rem] sm:pt-14 px-4 md:p-8 pb-10">
         <div className="max-w-7xl mx-auto space-y-6">
+        <div className="scroll-mt-28 rounded-2xl border border-cyan-400/20 bg-slate-900/45 backdrop-blur-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white m-0 flex items-center gap-2">
+              <CalendarDays size={18} className="text-amber-300 shrink-0" aria-hidden />
+              Calendario del torneo
+            </p>
+            <p className="text-xs text-sky-200/75 mt-1 mb-0 leading-snug">
+              Consulta qué partidos se juegan cada día (grupos y eliminatorias).
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCalendarOpen(true)}
+            className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400/90 to-amber-500 text-slate-900 font-bold px-5 py-2.5 text-sm hover:brightness-110 transition"
+          >
+            Abrir calendario
+          </button>
+        </div>
+
         <div
           id="section-inicio"
           className="scroll-mt-28 relative overflow-hidden rounded-3xl border border-amber-400/25 bg-gradient-to-r from-[#003875]/95 via-[#005a9c]/90 to-[#002a52]/95 p-8 shadow-2xl shadow-black/50"
@@ -943,6 +969,27 @@ export default function WorldCupPoolApp() {
                     onChange={e => setSpecials(prev => ({ ...prev, topAssist: e.target.value }))}
                   />
                 </label>
+
+                <label className="block text-sm text-sky-200/90 max-w-md">
+                  <span className="inline-flex items-center gap-2">
+                    <Shield size={16} className="text-amber-300/90" aria-hidden />
+                    Guante de oro
+                  </span>
+                  <input
+                    disabled={isReadOnly}
+                    list="wc-goalkeepers"
+                    className="mt-1 w-full rounded-2xl border border-white/15 bg-black/30 p-3 text-white placeholder:text-slate-500 disabled:opacity-40"
+                    placeholder="Portero (sugerencias)"
+                    value={activeSpecials.goldenGlove || ''}
+                    onChange={e => setSpecials(prev => ({ ...prev, goldenGlove: e.target.value }))}
+                  />
+                </label>
+
+                <datalist id="wc-goalkeepers">
+                  {WORLD_CUP_GOALKEEPER_OPTIONS.map(name => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
               </div>
             </div>
           </div>
@@ -1034,6 +1081,7 @@ export default function WorldCupPoolApp() {
                 <div>Campeón acertado: +10 pts · Subcampeón: +5 · 3.er puesto: +4</div>
                 <div>Pichichi / goleador 1.º / 2.º / 3.º: +5 / +3 / +2 pts</div>
                 <div>Mejor jugador 1.º / 2.º / 3.º: +5 / +3 / +2 pts</div>
+                <div>Guante de oro: +5 pts</div>
                 <div>Máximo asistente: +5 pts</div>
               </div>
             </div>
@@ -1058,6 +1106,11 @@ export default function WorldCupPoolApp() {
       </div>
       <PointsBreakdownModal state={pointsBreakdown} onClose={closePointsBreakdown} />
       <MatchPredictionsModal state={matchPredictionsModal} onClose={closeMatchPredictionsModal} />
+      <TournamentCalendarModal
+        open={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
+        days={tournamentCalendarDays}
+      />
       <MessageModal modal={modal} onClose={closeModal} />
       <AdminLockModal
         mode={lockModalMode}

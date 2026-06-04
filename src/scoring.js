@@ -273,6 +273,13 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
 
   pushPodiumTriplet(lines, spec, ospec, ['topScorer', 'topScorer2', 'topScorer3'], 'Pichichi / goleador')
   pushPodiumTriplet(lines, spec, ospec, ['bestPlayer', 'bestPlayer2', 'bestPlayer3'], 'Mejor jugador')
+  if (ospec.goldenGlove && norm(spec.goldenGlove) === norm(ospec.goldenGlove)) {
+    lines.push({
+      matchLabel: 'Predicción especial · Guante de oro',
+      points: 5,
+      reason: `Acertaste el guante de oro: «${ospec.goldenGlove}».`,
+    })
+  }
 
   if (ospec.topAssist && norm(spec.topAssist) === norm(ospec.topAssist)) {
     lines.push({

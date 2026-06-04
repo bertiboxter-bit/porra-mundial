@@ -18,6 +18,7 @@ import { sanitizeScoreInput } from './scoreInput.js'
 import MessageModal from './MessageModal.jsx'
 import { fetchOfficialState, saveOfficialAndRecalculatePoints } from './officialResultsService.js'
 import { mergeSpecials } from './porraSpecials.js'
+import { WORLD_CUP_GOALKEEPER_OPTIONS } from './worldCup2026Goalkeepers.js'
 
 export default function OfficialResultsPanel({ onBack }) {
   const [predictions, setPredictions] = useState({})
@@ -271,7 +272,8 @@ export default function OfficialResultsPanel({ onBack }) {
               <p className="text-sm text-slate-400 mb-4 m-0">
                 Misma ortografía que usen los participantes (sin distinguir mayúsculas). Campeón, subcampeón
                 y 3.er puesto se validan también contra la final y el partido de tercer puesto si hay
-                marcadores. Pichichi y mejor jugador: rellena 1º, 2º y 3º puesto para puntuar el podio.
+                marcadores. Pichichi y mejor jugador: rellena 1º, 2º y 3º puesto para puntuar el podio. Guante de
+                oro: un solo ganador (+5 pts).
               </p>
               <div className="space-y-5">
                 <div>
@@ -320,6 +322,20 @@ export default function OfficialResultsPanel({ onBack }) {
                     onChange={e => setSpecials(prev => ({ ...prev, topAssist: e.target.value }))}
                   />
                 </label>
+                <label className="block text-sm text-sky-200/90 max-w-md">
+                  Guante de oro
+                  <input
+                    list="wc-goalkeepers-official"
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 p-3 text-white"
+                    value={specials.goldenGlove || ''}
+                    onChange={e => setSpecials(prev => ({ ...prev, goldenGlove: e.target.value }))}
+                  />
+                </label>
+                <datalist id="wc-goalkeepers-official">
+                  {WORLD_CUP_GOALKEEPER_OPTIONS.map(name => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
               </div>
             </div>
           </>
