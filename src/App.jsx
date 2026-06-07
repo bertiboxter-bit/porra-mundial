@@ -1269,12 +1269,23 @@ export default function WorldCupPoolApp() {
               </div>
 
               <div className="space-y-3 text-sm text-sky-100/80">
-                <div>
-                  Resultado exacto (grupos y KO, con penaltis si hubo empate tras 90&apos; o 120&apos;, incl.
-                  prórroga): +3 pts
-                </div>
-                <div>Ganador o empate acertado: +1 pt</div>
+                <div className="font-semibold text-sky-100/95">Fase de grupos</div>
+                <div>Marcador exacto: +3 pts</div>
+                <div>Ganador o empate acertado (sin marcador exacto): +1 pt</div>
                 <div>Clasificado en su posición de grupo: +2 pts</div>
+
+                <div className="font-semibold text-sky-100/95 pt-1">Eliminatorias (sin penaltis)</div>
+                <div>Marcador exacto a 120 minutos (90&apos; + prórroga): +3 pts</div>
+                <div>Ganador del cruce acertado (sin marcador exacto): +1 pt</div>
+
+                <div className="font-semibold text-sky-100/95 pt-1">Eliminatorias (partido a penaltis)</div>
+                <div>Marcador exacto a 120 minutos (empate tras 90&apos; + prórroga): +2 pts</div>
+                <div>
+                  Ganador de la tanda / quien pasa de ronda: +1 pt (solo si también acertaste el empate a
+                  120 minutos; no hace falta acertar el marcador exacto de la tanda)
+                </div>
+
+                <div className="font-semibold text-sky-100/95 pt-1">Predicciones especiales</div>
                 <div>Campeón acertado: +10 pts · Subcampeón: +5 · 3.er puesto: +4</div>
                 <div>Pichichi / goleador 1.º / 2.º / 3.º: +5 / +3 / +2 pts</div>
                 <div>Mejor jugador 1.º / 2.º / 3.º: +5 / +3 / +2 pts</div>

@@ -7,6 +7,7 @@ import {
   getKnockoutWinnerFromCell,
 } from './bracketLogic.js'
 import { mergeSpecials } from './porraSpecials.js'
+import { getKnockoutMatchScoreParts } from './scoring.js'
 function norm(s) {
   return String(s ?? '')
     .trim()
@@ -221,34 +222,40 @@ export function buildPorraComparison(
     }
 
     const ow = getKnockoutWinnerFromCell(row.homeTeam, row.awayTeam, oCell)
-    const uw = getKnockoutWinnerFromCell(uTeams.home, uTeams.away, uCell)
-    if (os.h === us.h && os.a === us.a) {
+    const scoreParts = getKnockoutMatchScoreParts(oCell, uCell, row.homeTeam, row.awayTeam)
+    const koPoints = scoreParts.reduce((sum, part) => sum + part.points, 0)
+
+    if (koPoints >= 3) {
       exactCount += 1
       rows.push({
         id: `ko-${key}`,
         category: 'Eliminatorias',
         label: pair,
-        detail: `${us.h}–${us.a} exacto (+3 pts)`,
+        detail: `${scoreParts.map(part => part.reason).join(' · ')} (+${koPoints} pts)`,
         status: 'exact',
-        points: 3,
+        points: koPoints,
       })
-    } else if (ow && uw && ow === uw) {
+    } else if (koPoints > 0) {
       partialCount += 1
       rows.push({
         id: `ko-${key}`,
         category: 'Eliminatorias',
         label: pair,
-        detail: `Ganador acertado: ${uw} (+1 pt)`,
+        detail: `${scoreParts.map(part => part.reason).join(' · ')} (+${koPoints} pt${koPoints === 1 ? '' : 's'})`,
         status: 'partial',
-        points: 1,
+        points: koPoints,
       })
     } else {
       missCount += 1
+      const pensNote =
+        ow && os.h === os.a
+          ? ' · Oficial a penaltis: hace falta acertar el empate a 120 minutos para sumar por la tanda'
+          : ''
       rows.push({
         id: `ko-${key}`,
         category: 'Eliminatorias',
         label: pair,
-        detail: `Tu ${us.h}–${us.a} vs oficial ${os.h}–${os.a}`,
+        detail: `Tu ${us.h}–${us.a} vs oficial ${os.h}–${os.a}${pensNote}`,
         status: 'miss',
       })
     }

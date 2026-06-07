@@ -37,22 +37,63 @@ function groupOutcome(h, a) {
   return 'D'
 }
 
-function pensEqual(c1, c2) {
-  const a = Number(c1?.pensHome)
-  const b = Number(c1?.pensAway)
-  const c = Number(c2?.pensHome)
-  const d = Number(c2?.pensAway)
-  if ([a, b, c, d].some(Number.isNaN)) return false
-  return a === c && b === d
+function officialKnockoutDecidedOnPenalties(oCell) {
+  const os = parseScoreCell(oCell)
+  if (!os || os.h !== os.a) return false
+  const ph = Number(oCell.pensHome)
+  const pa = Number(oCell.pensAway)
+  return !Number.isNaN(ph) && !Number.isNaN(pa) && ph !== pa
 }
 
-/** Marcador tras tiempo reglamentario (90' o 120' con prórroga) igual y misma tanda de penaltis (si aplica). */
-function koElimExactMatch(oCell, uCell) {
+/**
+ * Puntos por partido de eliminatorias frente al resultado oficial.
+ * Si el oficial fue a penaltis: +2 marcador exacto a 120' y +1 ganador de la tanda (solo si acertaste el empate a 120').
+ * Si no hubo penaltis: +3 marcador exacto o +1 ganador del cruce.
+ * @returns {{ points: number, reason: string }[]}
+ */
+export function getKnockoutMatchScoreParts(oCell, uCell, homeTeam, awayTeam) {
   const os = parseScoreCell(oCell)
   const us = parseScoreCell(uCell)
-  if (!os || !us || os.h !== us.h || os.a !== us.a) return false
-  if (os.h === os.a) return pensEqual(oCell, uCell)
-  return true
+  if (!os || !us || !homeTeam || !awayTeam) return []
+
+  const officialWinner = getKnockoutWinnerFromCell(homeTeam, awayTeam, oCell)
+  if (!officialWinner) return []
+
+  const userWinner = getKnockoutWinnerFromCell(homeTeam, awayTeam, uCell)
+  const score120Exact = os.h === us.h && os.a === us.a
+
+  /** @type {{ points: number, reason: string }[]} */
+  const parts = []
+
+  if (officialKnockoutDecidedOnPenalties(oCell)) {
+    if (score120Exact) {
+      parts.push({
+        points: 2,
+        reason: `Marcador exacto a 120 minutos (90' + prórroga): ${us.h}–${us.a}, igual que el oficial.`,
+      })
+      if (userWinner === officialWinner) {
+        parts.push({
+          points: 1,
+          reason: `Ganador de la tanda de penaltis acertado: «${officialWinner}» pasa de ronda (no hace falta el marcador exacto de la tanda).`,
+        })
+      }
+    }
+    return parts
+  }
+
+  if (score120Exact) {
+    parts.push({
+      points: 3,
+      reason: `Marcador exacto en eliminatorias: ${us.h}–${us.a}, igual que el oficial.`,
+    })
+  } else if (userWinner && userWinner === officialWinner) {
+    parts.push({
+      points: 1,
+      reason: `Ganador de la eliminatoria acertado: «${userWinner}».`,
+    })
+  }
+
+  return parts
 }
 
 function groupOfficialComplete(officialPred, groupLetter) {
@@ -197,33 +238,16 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
     if (!oTeams?.home || !uTeams?.home) continue
     if (oTeams.home !== uTeams.home || oTeams.away !== uTeams.away) continue
 
-    const ow = getKnockoutWinnerFromCell(oTeams.home, oTeams.away, oCell)
-    const uw = getKnockoutWinnerFromCell(uTeams.home, uTeams.away, uCell)
-    if (!ow || !uw) continue
-
     const phase = knockoutPhaseLabel(key)
     const pairLabel = `${oTeams.home} – ${oTeams.away}`
     const label = `${phase} · ${pairLabel}`
 
-    if (koElimExactMatch(oCell, uCell)) {
-      const penO =
-        os.h === os.a
-          ? ` (pen. ${Number(oCell.pensHome)}–${Number(oCell.pensAway)})`
-          : ''
-      const penU =
-        us.h === us.a
-          ? `, penaltis ${Number(uCell.pensHome)}–${Number(uCell.pensAway)}`
-          : ''
+    const scoreParts = getKnockoutMatchScoreParts(oCell, uCell, oTeams.home, oTeams.away)
+    for (const part of scoreParts) {
       lines.push({
         matchLabel: label,
-        points: 3,
-        reason: `Marcador exacto en eliminatorias: ${us.h}–${us.a}${penU}, igual que el oficial${penO}.`,
-      })
-    } else if (ow === uw) {
-      lines.push({
-        matchLabel: label,
-        points: 1,
-        reason: `Ganador de la eliminatoria acertado: «${uw}».`,
+        points: part.points,
+        reason: part.reason,
       })
     }
   }
