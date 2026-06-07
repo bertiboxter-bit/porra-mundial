@@ -1269,20 +1269,39 @@ export default function WorldCupPoolApp() {
               </div>
 
               <div className="space-y-3 text-sm text-sky-100/80">
+                <p className="text-xs text-sky-200/65 m-0 leading-snug">
+                  En cada partido de eliminatorias el máximo es <strong className="text-sky-100/90">+3 pts</strong>.
+                  No se suma un +1 extra por «quien pasa» encima del marcador exacto: o sumas por exacto o por
+                  ganador del cruce, salvo en partidos a penaltis (desglose +2 + +1).
+                </p>
+
                 <div className="font-semibold text-sky-100/95">Fase de grupos</div>
                 <div>Marcador exacto: +3 pts</div>
                 <div>Ganador o empate acertado (sin marcador exacto): +1 pt</div>
                 <div>Clasificado en su posición de grupo: +2 pts</div>
 
                 <div className="font-semibold text-sky-100/95 pt-1">Eliminatorias (sin penaltis)</div>
-                <div>Marcador exacto a 120 minutos (90&apos; + prórroga): +3 pts</div>
-                <div>Ganador del cruce acertado (sin marcador exacto): +1 pt</div>
+                <div>
+                  Marcador exacto a 120 minutos (90&apos; + prórroga): +3 pts — incluye acertar quien pasa; no
+                  hay +1 adicional
+                </div>
+                <div>
+                  Ganador del cruce acertado, marcador no exacto (p. ej. oficial 2–1 y tú 1–0): +1 pt — no se
+                  combina con el +3
+                </div>
 
                 <div className="font-semibold text-sky-100/95 pt-1">Eliminatorias (partido a penaltis)</div>
-                <div>Marcador exacto a 120 minutos (empate tras 90&apos; + prórroga): +2 pts</div>
                 <div>
-                  Ganador de la tanda / quien pasa de ronda: +1 pt (solo si también acertaste el empate a
-                  120 minutos; no hace falta acertar el marcador exacto de la tanda)
+                  Marcador exacto a 120 minutos (empate tras 90&apos; + prórroga): +2 pts — no son +3 como en un
+                  2–1; el pleno (+3) requiere también la tanda
+                </div>
+                <div>
+                  Ganador de la tanda / quien pasa de ronda: +1 pt — solo si acertaste el empate a 120
+                  minutos; no hace falta el marcador exacto de la tanda (4–3 vs 5–4 da igual)
+                </div>
+                <div className="text-xs text-sky-200/60 pl-0">
+                  Ejemplo: oficial 0–0, gana Argentina a penaltis → 0–0 + Argentina = +3; 0–0 + penaltis mal =
+                  +2; 1–0 Argentina = 0 pts.
                 </div>
 
                 <div className="font-semibold text-sky-100/95 pt-1">Predicciones especiales</div>
