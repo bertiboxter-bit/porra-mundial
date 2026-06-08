@@ -220,7 +220,7 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
       lines.push({
         matchLabel: `Grupo ${g} · Clasificación`,
         points: 2,
-        reason: `Mismo equipo en la posición ${pos}º (${oTable[i].team}) con todos los partidos del grupo ya disputados oficialmente.`,
+        reason: `Posición ${pos}ª exacta en el grupo (${oTable[i].team}); no hace falta que clasifique a dieciseisavos.`,
       })
     }
   }

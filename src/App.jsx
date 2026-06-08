@@ -1270,55 +1270,28 @@ export default function WorldCupPoolApp() {
               </div>
 
               <div className="space-y-3 text-sm text-sky-100/80">
-                <p className="text-xs text-sky-200/65 m-0 leading-snug">
-                  En cada partido de eliminatorias el máximo es <strong className="text-sky-100/90">+3 pts</strong>.
-                  No se suma un +1 extra por «quien pasa» encima del marcador exacto: o sumas por exacto o por
-                  ganador del cruce, salvo en partidos a penaltis (desglose +2 + +1).
-                </p>
-
                 <div className="font-semibold text-sky-100/95">Fase de grupos</div>
                 <div>Marcador exacto: +3 pts</div>
                 <div>Ganador o empate acertado (sin marcador exacto): +1 pt</div>
-                <div>Clasificado en su posición de grupo: +2 pts</div>
+                <div>Posición exacta en la tabla del grupo (1.º a 4.º): +2 pts por cada acierto</div>
 
-                <div className="font-semibold text-sky-100/95 pt-1">Eliminatorias (sin penaltis)</div>
-                <div>
-                  Marcador exacto a 120 minutos (90&apos; + prórroga): +3 pts — incluye acertar quien pasa; no
-                  hay +1 adicional
+                <div className="font-semibold text-sky-100/95 pt-1">Eliminatorias · por partido (cruce exacto)</div>
+                <div className="text-xs text-sky-200/60 m-0">
+                  Solo puntúa si local y visitante coinciden con el cuadro oficial. Máximo +3 pts por partido.
                 </div>
-                <div>
-                  Ganador del cruce acertado, marcador no exacto (p. ej. oficial 2–1 y tú 1–0): +1 pt — no se
-                  combina con el +3
-                </div>
+                <div>Sin penaltis: marcador exacto a 120&apos; (+3) o ganador del cruce (+1)</div>
 
-                <div className="font-semibold text-sky-100/95 pt-1">Eliminatorias (partido a penaltis)</div>
-                <div>
-                  Marcador exacto a 120 minutos (empate tras 90&apos; + prórroga): +2 pts — no son +3 como en un
-                  2–1; el pleno (+3) requiere también la tanda
-                </div>
-                <div>
-                  Ganador de la tanda / quien pasa de ronda: +1 pt — solo si acertaste el empate a 120
-                  minutos; no hace falta el marcador exacto de la tanda (4–3 vs 5–4 da igual)
-                </div>
-                <div className="text-xs text-sky-200/60 pl-0">
-                  Ejemplo: oficial 0–0, gana Argentina a penaltis → 0–0 + Argentina = +3; 0–0 + penaltis mal =
-                  +2; 1–0 Argentina = 0 pts.
+                <div>Con penaltis: empate exacto a 120&apos; (+2) + ganador de la tanda (+1, solo si acertaste el empate)</div>
+                <div className="text-xs text-sky-200/60">
+                  Ej. 0–0 y gana Argentina a penaltis: 0–0 + Argentina = +3; 0–0 sin tanda = +2; 1–0 Argentina = 0.
                 </div>
 
                 <div className="font-semibold text-sky-100/95 pt-1">Eliminatorias · pasar de fase</div>
-                <p className="text-xs text-sky-200/65 m-0 leading-snug">
-                  Además de los puntos por partido (cruce exacto), sumas si una selección{' '}
-                  <strong className="text-sky-100/90">oficialmente pasa a esa ronda</strong> y tú también la
-                  tenías en esa fase en tu cuadro, <strong className="text-sky-100/90">aunque el rival sea
-                  otro</strong>. Empieza en <strong className="text-sky-100/90">octavos</strong>: la
-                  clasificación a dieciseisavos se puntúa solo con la posición en grupo (+2 arriba). Se
-                  calcula al introducir resultados oficiales.
-                </p>
-                <div>{knockoutPhaseAdvancementRulesText()}</div>
-                <div className="text-xs text-sky-200/60">
-                  Ejemplo: oficial Argentina en cuartos (aunque juegue contra Francia) y tú también tenías
-                  Argentina en cuartos → +3 pts, aunque tu octavo fuera otro cruce.
+                <div className="text-xs text-sky-200/60 m-0">
+                  Independiente del cruce: si el equipo llega a esa ronda en la realidad y tú también lo tenías en
+                  tu cuadro (aunque el rival sea otro). Dieciseisavos: solo posición en grupo (+2 arriba).
                 </div>
+                <div>{knockoutPhaseAdvancementRulesText()}</div>
 
                 <div className="font-semibold text-sky-100/95 pt-1">Predicciones especiales</div>
                 <div>Campeón acertado: +10 pts · Subcampeón: +5 · 3.er puesto: +4</div>
