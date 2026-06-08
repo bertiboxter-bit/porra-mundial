@@ -8,6 +8,7 @@ import {
   getKnockoutWinnerFromCell,
 } from './bracketLogic.js'
 import { mergeSpecials } from './porraSpecials.js'
+import { getKnockoutPhaseAdvancementScoreParts } from './knockoutPhaseAdvancement.js'
 
 function norm(s) {
   return String(s ?? '')
@@ -250,6 +251,10 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
         reason: part.reason,
       })
     }
+  }
+
+  for (const part of getKnockoutPhaseAdvancementScoreParts(officialBracket, officialKo, userBracket)) {
+    lines.push(part)
   }
 
   const fin = officialKo['fin-104']

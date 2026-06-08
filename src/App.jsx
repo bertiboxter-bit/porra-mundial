@@ -82,6 +82,7 @@ import {
   formatRankMovementLabel,
   formatGapAboveLabel,
 } from './rankingUtils.js'
+import { knockoutPhaseAdvancementRulesText } from './knockoutPhaseAdvancement.js'
 
 const OFFICIAL_HASH = '#resultados-oficiales'
 
@@ -1302,6 +1303,21 @@ export default function WorldCupPoolApp() {
                 <div className="text-xs text-sky-200/60 pl-0">
                   Ejemplo: oficial 0–0, gana Argentina a penaltis → 0–0 + Argentina = +3; 0–0 + penaltis mal =
                   +2; 1–0 Argentina = 0 pts.
+                </div>
+
+                <div className="font-semibold text-sky-100/95 pt-1">Eliminatorias · pasar de fase</div>
+                <p className="text-xs text-sky-200/65 m-0 leading-snug">
+                  Además de los puntos por partido (cruce exacto), sumas si una selección{' '}
+                  <strong className="text-sky-100/90">oficialmente pasa a esa ronda</strong> y tú también la
+                  tenías en esa fase en tu cuadro, <strong className="text-sky-100/90">aunque el rival sea
+                  otro</strong>. Empieza en <strong className="text-sky-100/90">octavos</strong>: la
+                  clasificación a dieciseisavos se puntúa solo con la posición en grupo (+2 arriba). Se
+                  calcula al introducir resultados oficiales.
+                </p>
+                <div>{knockoutPhaseAdvancementRulesText()}</div>
+                <div className="text-xs text-sky-200/60">
+                  Ejemplo: oficial Argentina en cuartos (aunque juegue contra Francia) y tú también tenías
+                  Argentina en cuartos → +3 pts, aunque tu octavo fuera otro cruce.
                 </div>
 
                 <div className="font-semibold text-sky-100/95 pt-1">Predicciones especiales</div>

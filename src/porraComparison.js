@@ -8,6 +8,7 @@ import {
 } from './bracketLogic.js'
 import { mergeSpecials } from './porraSpecials.js'
 import { getKnockoutMatchScoreParts } from './scoring.js'
+import { getKnockoutPhaseAdvancementScoreParts } from './knockoutPhaseAdvancement.js'
 function norm(s) {
   return String(s ?? '')
     .trim()
@@ -170,6 +171,18 @@ export function buildPorraComparison(
     ...(officialBracket.thirdPlace ? [officialBracket.thirdPlace] : []),
     ...(officialBracket.final ? [officialBracket.final] : []),
   ]
+
+  for (const part of getKnockoutPhaseAdvancementScoreParts(officialBracket, officialKo, userBracket)) {
+    partialCount += 1
+    rows.push({
+      id: `phase-${part.phaseId}-${part.team}`,
+      category: 'Fase alcanzada',
+      label: part.matchLabel,
+      detail: `${part.reason} (+${part.points} pt${part.points === 1 ? '' : 's'})`,
+      status: 'partial',
+      points: part.points,
+    })
+  }
 
   for (const row of officialKoRows) {
     const key = row.scoreKey
