@@ -18,6 +18,7 @@ import {
   Shield,
   Share2,
   BarChart3,
+  ChartPie,
   FileText,
   ArrowUp,
   ArrowDown,
@@ -73,6 +74,7 @@ import { FIFA_FIXTURES_URL } from './fifaMatchUrls.js'
 import MatchPredictionsModal from './MatchPredictionsModal.jsx'
 import PorraUserViewModal from './PorraUserViewModal.jsx'
 import AllPorrasSummaryModal from './AllPorrasSummaryModal.jsx'
+import PorraStatisticsSection from './PorraStatisticsSection.jsx'
 import {
   collectGroupMatchPredictions,
   collectKnockoutMatchPredictions,
@@ -580,6 +582,7 @@ export default function WorldCupPoolApp() {
             ['section-knockout', Swords, 'Eliminatorias'],
             ['section-specials', Star, 'Especiales'],
             ['section-ranking', Users, 'Clasificación'],
+            ['section-estadisticas', ChartPie, 'Estadísticas'],
             ['section-admin', SlidersHorizontal, 'Admin'],
           ].map(([id, Icon, label]) => (
             <button
@@ -599,6 +602,14 @@ export default function WorldCupPoolApp() {
           >
             <CalendarDays size={16} className="opacity-90 shrink-0" aria-hidden />
             Calendario
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollToSection('section-estadisticas')}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-violet-200/95 hover:bg-violet-400/15 border border-violet-400/30 transition"
+          >
+            <ChartPie size={16} className="opacity-90 shrink-0" aria-hidden />
+            Estadísticas
           </button>
           {predictionsLockedGlobally && savedUsers.length > 0 ? (
             <button
@@ -827,6 +838,14 @@ export default function WorldCupPoolApp() {
           >
             <FileText size={18} aria-hidden />
             Resumen / exportar
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollToSection('section-estadisticas')}
+            className="inline-flex items-center gap-2 rounded-xl border border-violet-400/35 bg-violet-500/15 px-4 py-2.5 text-sm font-semibold text-violet-100 hover:bg-violet-500/25 transition"
+          >
+            <ChartPie size={18} aria-hidden />
+            Estadísticas del grupo
           </button>
           {predictionsLockedGlobally && savedUsers.length > 0 ? (
             <button
@@ -1225,6 +1244,8 @@ export default function WorldCupPoolApp() {
                 })}
               </div>
             </div>
+
+            <PorraStatisticsSection users={savedUsers} />
 
             <div className="rounded-3xl border border-amber-400/20 bg-gradient-to-br from-[#1a0508] to-[#0a1628] p-6 shadow-xl">
               <div className="flex items-center gap-3 mb-4">
