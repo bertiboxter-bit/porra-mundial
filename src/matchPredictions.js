@@ -1,3 +1,5 @@
+import { computeFullKnockout } from './bracketLogic.js'
+import { getTeamsForScoreKey } from './scoring.js'
 import { rankingDisplayName } from './userIdentity.js'
 
 function displayPart(v) {
@@ -53,15 +55,25 @@ export function collectGroupMatchPredictions(users, matchId) {
  * @param {Record<string, unknown>[]} users
  * @param {string} scoreKey
  */
+function formatKnockoutMatchupLine(teams) {
+  if (!teams?.home || !teams?.away) return 'Cruce por definir'
+  return `${teams.home} – ${teams.away}`
+}
+
 export function collectKnockoutMatchPredictions(users, scoreKey) {
   return (users || [])
     .map(user => {
+      const predictions =
+        user?.predictions && typeof user.predictions === 'object' ? user.predictions : {}
       const ko = user?.knockout && typeof user.knockout === 'object' ? user.knockout : {}
       const cell = ko[scoreKey]
+      const bracket = computeFullKnockout(predictions, ko)
+      const teams = getTeamsForScoreKey(bracket, scoreKey)
       const name = rankingDisplayName(user)
       return {
         key: String(user.username ?? user.nickname ?? name),
         name,
+        matchupLine: formatKnockoutMatchupLine(teams),
         scoreLine: formatKnockoutScoreLine(cell),
         sortKey: name.toLocaleLowerCase('es'),
       }

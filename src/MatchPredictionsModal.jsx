@@ -3,7 +3,12 @@ import { Users, X } from 'lucide-react'
 
 /**
  * @param {{
- *   state: null | { title: string, subtitle?: string, entries: { name: string, scoreLine: string }[] }
+ *   state: null | {
+ *     title: string
+ *     subtitle?: string
+ *     variant?: 'group' | 'knockout'
+ *     entries: { name: string, scoreLine: string, matchupLine?: string }[]
+ *   }
  *   onClose: () => void
  * }} props
  */
@@ -43,6 +48,11 @@ export default function MatchPredictionsModal({ state, onClose }) {
               {state.subtitle ? (
                 <p className="text-xs text-sky-200/75 mt-1 mb-0 leading-snug">{state.subtitle}</p>
               ) : null}
+              {state.variant === 'knockout' ? (
+                <p className="text-[11px] text-cyan-200/65 mt-1.5 mb-0 leading-snug">
+                  Cada participante puede tener equipos distintos en el mismo hueco del cuadro.
+                </p>
+              ) : null}
             </div>
           </div>
           <button
@@ -62,10 +72,19 @@ export default function MatchPredictionsModal({ state, onClose }) {
             state.entries.map(entry => (
               <div
                 key={entry.key ?? entry.name}
-                className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-3 py-2.5"
+                className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5"
               >
-                <span className="text-sm font-medium text-white truncate">{entry.name}</span>
-                <span className="text-sm font-bold tabular-nums text-amber-200 shrink-0">{entry.scoreLine}</span>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-white truncate">{entry.name}</span>
+                  <span className="text-sm font-bold tabular-nums text-amber-200 shrink-0">
+                    {entry.scoreLine}
+                  </span>
+                </div>
+                {entry.matchupLine ? (
+                  <p className="text-xs text-sky-300/75 mt-1 mb-0 truncate" title={entry.matchupLine}>
+                    {entry.matchupLine}
+                  </p>
+                ) : null}
               </div>
             ))
           )}
