@@ -2,7 +2,10 @@ import { supabase } from './supabase'
 import { computeFullKnockout } from './bracketLogic.js'
 import { scorePredictionRow } from './scoring.js'
 import { mergeSpecials } from './porraSpecials.js'
-import { normalizeOfficialSavedByName } from './officialAdminName.js'
+import {
+  normalizeOfficialSavedByName,
+  validateOfficialSavedByName,
+} from './officialAdminName.js'
 import { buildRankByIdentity, sortRankingUsers } from './rankingUtils.js'
 
 const OFFICIAL_ID = 'default'
@@ -76,6 +79,9 @@ async function updatePredictionPointsAndRanking(row, updatePayload) {
  * Guarda resultados oficiales, registra historial y actualiza puntos + variación de puesto.
  */
 export async function saveOfficialAndRecalculatePoints({ predictions, knockout, specials, savedByName }) {
+  const savedByError = validateOfficialSavedByName(savedByName)
+  if (savedByError) throw new Error(savedByError)
+
   const payload = {
     id: OFFICIAL_ID,
     predictions: predictions ?? {},

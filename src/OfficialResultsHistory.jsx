@@ -1,26 +1,12 @@
 import { History } from 'lucide-react'
 
-export default function OfficialResultsHistory({ historyRows, historyError, savedByName, onSavedByNameChange }) {
+export default function OfficialResultsHistory({ historyRows, historyError }) {
   return (
     <section className="rounded-2xl border border-amber-400/15 bg-black/25 p-4 space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <History className="text-amber-300 shrink-0" size={20} aria-hidden />
         <h2 className="text-lg font-bold text-white m-0">Historial de guardados oficiales</h2>
       </div>
-
-      <label className="block text-sm text-sky-200/90 max-w-md">
-        <span className="font-semibold text-sky-100">Registrado por</span>
-        <input
-          type="text"
-          value={savedByName}
-          onChange={event => onSavedByNameChange(event.target.value)}
-          placeholder="Nombre del administrador"
-          className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-white placeholder:text-slate-500"
-        />
-        <span className="block text-xs text-sky-200/60 mt-1">
-          Se guarda en este navegador y aparece en cada entrada del historial al pulsar «Guardar y recalcular».
-        </span>
-      </label>
 
       {historyError ? (
         <p className="text-sm text-amber-200/90 m-0">

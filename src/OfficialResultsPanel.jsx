@@ -23,10 +23,12 @@ import {
   saveOfficialAndRecalculatePoints,
 } from './officialResultsService.js'
 import OfficialResultsHistory from './OfficialResultsHistory.jsx'
+import OfficialSavedByField from './OfficialSavedByField.jsx'
 import {
   readOfficialAdminName,
   writeOfficialAdminName,
   normalizeOfficialSavedByName,
+  validateOfficialSavedByName,
 } from './officialAdminName.js'
 import { mergeSpecials } from './porraSpecials.js'
 import { WORLD_CUP_GOALKEEPER_OPTIONS } from './worldCup2026Goalkeepers.js'
@@ -104,7 +106,20 @@ export default function OfficialResultsPanel({ onBack }) {
     setKnockoutScores(prev => applyKnockoutScorePatch(prev, key, side, val))
   }
 
+  const savedByNameError = validateOfficialSavedByName(savedByName)
+  const canSaveOfficial = !savedByNameError
+
   const handleSave = async () => {
+    const nameError = validateOfficialSavedByName(savedByName)
+    if (nameError) {
+      showModal({
+        variant: 'error',
+        title: 'Nombre obligatorio',
+        message: nameError,
+      })
+      return
+    }
+
     setSaveBusy(true)
     try {
       const predictionsToSave = applyDefaultTieOrdersToPredictions(predictions)
@@ -137,42 +152,50 @@ export default function OfficialResultsPanel({ onBack }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0f18] via-[#142038] to-[#1a0a20] p-4 md:p-8 text-slate-100">
       <div className="max-w-7xl mx-auto space-y-6">
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-amber-400/20 bg-black/30 p-5">
-          <div>
+        <header className="rounded-2xl border border-amber-400/20 bg-black/30 p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <button
+                type="button"
+                onClick={onBack}
+                className="inline-flex items-center gap-2 text-sky-200 hover:text-white text-sm font-semibold mb-3"
+              >
+                <ArrowLeft size={18} />
+                Volver a la porra
+              </button>
+              <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-sky-200">
+                Resultados oficiales
+              </h1>
+              <p className="text-sky-100/80 text-sm mt-2 max-w-2xl m-0">
+                Introduce los mismos marcadores que en la porra, pero con los resultados reales. Al guardar se
+                actualizan los puntos de cada participante según el reglamento (grupos, KO con mismos
+                emparejamientos, premios si los rellenas abajo).
+              </p>
+            </div>
             <button
               type="button"
-              onClick={onBack}
-              className="inline-flex items-center gap-2 text-sky-200 hover:text-white text-sm font-semibold mb-3"
+              disabled={saveBusy || loadBusy || !canSaveOfficial}
+              onClick={handleSave}
+              title={
+                canSaveOfficial
+                  ? undefined
+                  : 'Rellena «Registrado por» antes de guardar'
+              }
+              className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 font-bold px-6 py-3 flex items-center justify-center gap-2 hover:brightness-110 transition disabled:opacity-50"
             >
-              <ArrowLeft size={18} />
-              Volver a la porra
+              {saveBusy ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+              {saveBusy ? 'Guardando…' : 'Guardar y recalcular puntos'}
             </button>
-            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-sky-200">
-              Resultados oficiales
-            </h1>
-            <p className="text-sky-100/80 text-sm mt-2 max-w-2xl m-0">
-              Introduce los mismos marcadores que en la porra, pero con los resultados reales. Al guardar se
-              actualizan los puntos de cada participante según el reglamento (grupos, KO con mismos emparejamientos,
-              premios si los rellenas abajo).
-            </p>
           </div>
-          <button
-            type="button"
-            disabled={saveBusy || loadBusy}
-            onClick={handleSave}
-            className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 font-bold px-6 py-3 flex items-center justify-center gap-2 hover:brightness-110 transition disabled:opacity-50"
-          >
-            {saveBusy ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-            {saveBusy ? 'Guardando…' : 'Guardar y recalcular puntos'}
-          </button>
+
+          <OfficialSavedByField
+            savedByName={savedByName}
+            savedByNameError={savedByNameError}
+            onSavedByNameChange={handleSavedByNameChange}
+          />
         </header>
 
-        <OfficialResultsHistory
-          historyRows={historyRows}
-          historyError={historyError}
-          savedByName={savedByName}
-          onSavedByNameChange={handleSavedByNameChange}
-        />
+        <OfficialResultsHistory historyRows={historyRows} historyError={historyError} />
 
         {loadBusy ? (
           <div className="text-center text-sky-200 py-20">Cargando datos oficiales…</div>

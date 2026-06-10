@@ -20,7 +20,14 @@ export function writeOfficialAdminName(name) {
   }
 }
 
-export function normalizeOfficialSavedByName(name) {
+export function validateOfficialSavedByName(name) {
   const trimmed = String(name ?? '').trim()
-  return trimmed || 'Administrador'
+  if (!trimmed) {
+    return 'Indica quién guarda los resultados en el campo «Registrado por».'
+  }
+  return null
+}
+
+export function normalizeOfficialSavedByName(name) {
+  return String(name ?? '').trim()
 }

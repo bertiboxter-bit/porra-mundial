@@ -19,6 +19,7 @@ import {
   Share2,
   BarChart3,
   ChartPie,
+  Gift,
   FileText,
   ArrowUp,
   ArrowDown,
@@ -75,6 +76,7 @@ import MatchPredictionsModal from './MatchPredictionsModal.jsx'
 import PorraUserViewModal from './PorraUserViewModal.jsx'
 import AllPorrasSummaryModal from './AllPorrasSummaryModal.jsx'
 import PorraStatisticsSection from './PorraStatisticsSection.jsx'
+import PrizesModal from './PrizesModal.jsx'
 import {
   collectGroupMatchPredictions,
   collectKnockoutMatchPredictions,
@@ -178,6 +180,7 @@ export default function WorldCupPoolApp() {
   const [allPorrasOpen, setAllPorrasOpen] = useState(false)
   const [matchPredictionsModal, setMatchPredictionsModal] = useState(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [prizesOpen, setPrizesOpen] = useState(false)
   const [comparisonOpen, setComparisonOpen] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const [officialState, setOfficialState] = useState(null)
@@ -597,6 +600,14 @@ export default function WorldCupPoolApp() {
           ))}
           <button
             type="button"
+            onClick={() => setPrizesOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-amber-200/95 hover:bg-amber-400/15 border border-amber-400/35 transition"
+          >
+            <Gift size={16} className="opacity-90 shrink-0" aria-hidden />
+            Premios
+          </button>
+          <button
+            type="button"
             onClick={() => setCalendarOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-emerald-200/95 hover:bg-emerald-400/15 border border-emerald-400/30 transition"
           >
@@ -637,14 +648,6 @@ export default function WorldCupPoolApp() {
       <div className="px-4 md:px-8 pt-4 md:pt-6 pb-10">
         <div className="max-w-7xl mx-auto space-y-6">
         <PorraCountdownStrip />
-        {isPorraClosedByDeadline ? (
-          <p
-            className="text-sm text-red-200/90 m-0 rounded-xl border border-red-400/30 bg-red-950/35 px-4 py-3"
-            role="status"
-          >
-            El plazo para modificar la porra ha finalizado (8 de junio de 2026, 23:59, hora de España).
-          </p>
-        ) : null}
 
         <div
           id="section-inicio"
@@ -1321,6 +1324,7 @@ export default function WorldCupPoolApp() {
         onClose={() => setCalendarOpen(false)}
         days={tournamentCalendarDays}
       />
+      <PrizesModal open={prizesOpen} onClose={() => setPrizesOpen(false)} />
       <PorraSummaryModal
         open={summaryOpen}
         onClose={() => setSummaryOpen(false)}
