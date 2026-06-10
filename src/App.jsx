@@ -38,6 +38,7 @@ import OfficialResultsPanel from './OfficialResultsPanel.jsx'
 import AdminLockModal from './AdminLockModal.jsx'
 import PointsBreakdownModal from './PointsBreakdownModal.jsx'
 import {
+  fetchLatestOfficialUpdate,
   fetchOfficialState,
   fetchPredictionsGloballyLocked,
   setPredictionsGloballyLocked,
@@ -77,6 +78,9 @@ import PorraUserViewModal from './PorraUserViewModal.jsx'
 import AllPorrasSummaryModal from './AllPorrasSummaryModal.jsx'
 import PorraStatisticsSection from './PorraStatisticsSection.jsx'
 import PrizesModal from './PrizesModal.jsx'
+import OfficialLastUpdateBanner from './OfficialLastUpdateBanner.jsx'
+import PersonalRankingSummaryCard from './PersonalRankingSummaryCard.jsx'
+import { buildPersonalRankingSummary } from './personalRankingSummary.js'
 import {
   collectGroupMatchPredictions,
   collectKnockoutMatchPredictions,
@@ -184,6 +188,7 @@ export default function WorldCupPoolApp() {
   const [comparisonOpen, setComparisonOpen] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const [officialState, setOfficialState] = useState(null)
+  const [latestOfficialUpdate, setLatestOfficialUpdate] = useState(null)
 
   const tournamentCalendarDays = useMemo(() => buildTournamentCalendarDays(), [])
 
@@ -258,14 +263,16 @@ export default function WorldCupPoolApp() {
 
   useEffect(() => {
     const sync = async () => {
-      const [users, globallyLocked, official] = await Promise.all([
+      const [users, globallyLocked, official, latestUpdate] = await Promise.all([
         fetchAllPredictions(),
         fetchPredictionsGloballyLocked(),
         fetchOfficialState(),
+        fetchLatestOfficialUpdate(),
       ])
       setSavedUsers(users)
       setPredictionsLockedGlobally(globallyLocked)
       setOfficialState(official)
+      setLatestOfficialUpdate(latestUpdate)
     }
 
     sync()
@@ -463,6 +470,11 @@ export default function WorldCupPoolApp() {
     [savedUsers],
   )
 
+  const personalRankingSummary = useMemo(() => {
+    if (!sessionConnected || !username.trim()) return null
+    return buildPersonalRankingSummary(ranking, username)
+  }, [sessionConnected, username, ranking])
+
   const isReadOnly = isPorraClosedByDeadline || predictionsLockedGlobally
 
   const openPorraUserView = useCallback(user => {
@@ -614,14 +626,6 @@ export default function WorldCupPoolApp() {
             <CalendarDays size={16} className="opacity-90 shrink-0" aria-hidden />
             Calendario
           </button>
-          <button
-            type="button"
-            onClick={() => scrollToSection('section-estadisticas')}
-            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-violet-200/95 hover:bg-violet-400/15 border border-violet-400/30 transition"
-          >
-            <ChartPie size={16} className="opacity-90 shrink-0" aria-hidden />
-            Estadísticas
-          </button>
           {predictionsLockedGlobally && savedUsers.length > 0 ? (
             <button
               type="button"
@@ -648,6 +652,12 @@ export default function WorldCupPoolApp() {
       <div className="px-4 md:px-8 pt-4 md:pt-6 pb-10">
         <div className="max-w-7xl mx-auto space-y-6">
         <PorraCountdownStrip />
+
+        <OfficialLastUpdateBanner latestUpdate={latestOfficialUpdate} />
+
+        {sessionConnected ? (
+          <PersonalRankingSummaryCard summary={personalRankingSummary} />
+        ) : null}
 
         <div
           id="section-inicio"

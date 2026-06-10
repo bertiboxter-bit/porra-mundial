@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { Gift, Medal, X } from 'lucide-react'
+import { PORRA_PRIZE_TIERS } from './porraPrizes.js'
 
-const PRIZE_ROWS = [
-  { place: '1.º puesto', amount: '200 €', accent: 'from-amber-300 to-amber-500' },
-  { place: '2.º puesto', amount: '110 €', accent: 'from-slate-200 to-slate-400' },
-  { place: '3.er puesto', amount: '50 €', accent: 'from-amber-600/90 to-amber-800/90' },
+const PRIZE_ACCENTS = [
+  'from-amber-300 to-amber-500',
+  'from-slate-200 to-slate-400',
+  'from-amber-600/90 to-amber-800/90',
 ]
 
 /**
@@ -59,21 +60,21 @@ export default function PrizesModal({ open, onClose }) {
         </div>
 
         <ul className="p-5 space-y-3 m-0 list-none">
-          {PRIZE_ROWS.map((row, index) => (
+          {PORRA_PRIZE_TIERS.map((row, index) => (
             <li
-              key={row.place}
+              key={row.label}
               className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/30 px-4 py-3"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <span
-                  className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${row.accent} text-slate-900 font-black text-sm`}
+                  className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${PRIZE_ACCENTS[index] ?? PRIZE_ACCENTS[0]} text-slate-900 font-black text-sm`}
                   aria-hidden
                 >
-                  {index + 1}
+                  {row.rank}
                 </span>
                 <span className="flex items-center gap-2 text-sm font-semibold text-white">
                   <Medal size={16} className="text-amber-300/90 shrink-0" aria-hidden />
-                  {row.place}
+                  {row.label}
                 </span>
               </div>
               <span className="text-xl font-black tabular-nums text-amber-200 shrink-0">{row.amount}</span>

@@ -62,6 +62,12 @@ export async function fetchOfficialResultsLog(limit = 25) {
   return { rows: data || [], error: null }
 }
 
+export async function fetchLatestOfficialUpdate() {
+  const { rows, error } = await fetchOfficialResultsLog(1)
+  if (error || rows.length === 0) return null
+  return rows[0]
+}
+
 function predictionRowIdentity(row) {
   return row.username ?? row.nickname ?? null
 }
