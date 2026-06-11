@@ -86,6 +86,12 @@ import {
   collectKnockoutMatchPredictions,
 } from './matchPredictions.js'
 import {
+  formatOfficialGroupScoreLine,
+  formatOfficialKnockoutScoreLine,
+  hasOfficialGroupMatchResult,
+  hasOfficialKnockoutMatchResult,
+} from './officialMatchHighlight.js'
+import {
   sortRankingUsers,
   enrichRankingRows,
   formatRankMovementLabel,
@@ -485,27 +491,52 @@ export default function WorldCupPoolApp() {
 
   const closeMatchPredictionsModal = useCallback(() => setMatchPredictionsModal(null), [])
 
+  const officialPredictions = officialState?.predictions ?? null
+  const officialKnockout = officialState?.knockout ?? null
+  const officialBracket = useMemo(
+    () =>
+      officialState
+        ? computeFullKnockout(officialState.predictions ?? {}, officialState.knockout ?? {})
+        : null,
+    [officialState],
+  )
+
   const openGroupMatchPredictions = useCallback(
     match => {
+      const officialPred = officialState?.predictions
+      const hasOfficial = hasOfficialGroupMatchResult(officialPred, match.id)
       setMatchPredictionsModal({
         title: `${match.home} – ${match.away}`,
         subtitle: `Grupo ${match.group} · Jornada ${match.matchday}`,
-        entries: collectGroupMatchPredictions(savedUsers, match.id),
+        officialScoreLine: hasOfficial
+          ? formatOfficialGroupScoreLine(officialPred, match.id)
+          : null,
+        entries: collectGroupMatchPredictions(savedUsers, match.id, officialPred),
       })
     },
-    [savedUsers],
+    [savedUsers, officialState],
   )
 
   const openKnockoutMatchPredictions = useCallback(
     ({ title, subtitle, scoreKey }) => {
+      const officialKo = officialState?.knockout
+      const hasOfficial = hasOfficialKnockoutMatchResult(officialKo, scoreKey)
       setMatchPredictionsModal({
         title,
         subtitle,
         variant: 'knockout',
-        entries: collectKnockoutMatchPredictions(savedUsers, scoreKey),
+        officialScoreLine: hasOfficial
+          ? formatOfficialKnockoutScoreLine(officialKo, scoreKey)
+          : null,
+        entries: collectKnockoutMatchPredictions(
+          savedUsers,
+          scoreKey,
+          officialKo,
+          officialBracket,
+        ),
       })
     },
-    [savedUsers],
+    [savedUsers, officialState, officialBracket],
   )
 
   const fullBracket = useMemo(
@@ -976,6 +1007,7 @@ export default function WorldCupPoolApp() {
                       showMatchPredictions={predictionsLockedGlobally}
                       onOpenMatchPredictions={openGroupMatchPredictions}
                       qualificationStatusByTeam={groupQualificationStatus}
+                      officialPredictions={officialPredictions}
                     />
                   ))}
                 </div>
@@ -989,6 +1021,7 @@ export default function WorldCupPoolApp() {
                     showMatchPredictions={predictionsLockedGlobally}
                     onOpenMatchPredictions={openGroupMatchPredictions}
                     qualificationStatusByTeam={groupQualificationStatus}
+                    officialPredictions={officialPredictions}
                   />
                 </div>
               )}
@@ -1002,6 +1035,8 @@ export default function WorldCupPoolApp() {
                 locked={isReadOnly}
                 showMatchPredictions={predictionsLockedGlobally}
                 onOpenKnockoutMatchPredictions={openKnockoutMatchPredictions}
+                officialKnockout={officialKnockout}
+                officialBracket={officialBracket}
               />
             </div>
 

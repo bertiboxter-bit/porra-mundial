@@ -2,7 +2,13 @@ import { getKnockoutWinnerFromCell } from './bracketLogic.js'
 import { TeamFlag } from './TeamFlag.jsx'
 import MatchFifaLink from './MatchFifaLink.jsx'
 import MatchPredictionsLink from './MatchPredictionsLink.jsx'
+import OfficialMatchBadge from './OfficialMatchBadge.jsx'
 import ScoreInput from './ScoreInput.jsx'
+import {
+  formatOfficialKnockoutScoreLine,
+  getKnockoutMatchPointsEarned,
+  hasOfficialKnockoutMatchResult,
+} from './officialMatchHighlight.js'
 
 function MatchCard({
   title,
@@ -20,8 +26,25 @@ function MatchCard({
   locked,
   showMatchPredictions,
   onOpenMatchPredictions,
+  officialKnockout = null,
+  officialBracket = null,
+  userBracket = null,
 }) {
   const p = scores[scoreKey] || {}
+  const hasOfficial = hasOfficialKnockoutMatchResult(officialKnockout, scoreKey)
+  const officialScoreLine = hasOfficial
+    ? formatOfficialKnockoutScoreLine(officialKnockout, scoreKey)
+    : null
+  const userPointsEarned =
+    hasOfficial && officialBracket && userBracket
+      ? getKnockoutMatchPointsEarned(
+          officialKnockout,
+          officialBracket,
+          scores,
+          userBracket,
+          scoreKey,
+        )
+      : null
   const h = Number(p.home)
   const a = Number(p.away)
   const regValid = !Number.isNaN(h) && !Number.isNaN(a)
@@ -35,13 +58,27 @@ function MatchCard({
   return (
     <div
       data-porra-target={`knockout-${scoreKey}`}
-      className="rounded-2xl border border-[#2a6fb0]/40 bg-gradient-to-br from-[#0a2342]/90 to-[#051525]/95 p-4 text-left flex flex-col gap-2 shadow-lg shadow-black/30 scroll-mt-32"
+      className={`rounded-2xl border p-4 text-left flex flex-col gap-2 shadow-lg shadow-black/30 scroll-mt-32 ${
+        hasOfficial
+          ? userPointsEarned != null && userPointsEarned > 0
+            ? 'border-emerald-400/40 bg-gradient-to-br from-emerald-950/35 to-[#051525]/95'
+            : 'border-emerald-400/25 bg-gradient-to-br from-emerald-950/20 to-[#051525]/95'
+          : 'border-[#2a6fb0]/40 bg-gradient-to-br from-[#0a2342]/90 to-[#051525]/95'
+      }`}
     >
       <div className="flex justify-between items-start gap-2 flex-wrap">
         <span className="text-[11px] font-bold uppercase tracking-wider text-[#7ec8ff]">
           {title}
         </span>
         <div className="flex flex-wrap items-center gap-2 justify-end">
+          {hasOfficial && officialScoreLine ? (
+            <OfficialMatchBadge scoreLine={officialScoreLine} compact />
+          ) : null}
+          {userPointsEarned != null && userPointsEarned > 0 ? (
+            <span className="text-[10px] font-bold tabular-nums text-emerald-300">
+              Tu pronóstico: +{userPointsEarned} pts
+            </span>
+          ) : null}
           {dateLabel ? (
             <span className="text-[11px] text-amber-200/90 whitespace-nowrap">{dateLabel}</span>
           ) : null}
@@ -179,10 +216,15 @@ export default function KnockoutSection({
   locked,
   showMatchPredictions,
   onOpenKnockoutMatchPredictions,
+  officialKnockout = null,
+  officialBracket = null,
 }) {
   const matchPredictionsProps = {
     showMatchPredictions,
     onOpenMatchPredictions: onOpenKnockoutMatchPredictions,
+    officialKnockout,
+    officialBracket,
+    userBracket: bracket,
   }
   return (
     <div className="rounded-3xl border border-[#c9a227]/25 bg-[#061a2e]/85 backdrop-blur-md p-6 shadow-2xl shadow-black/40">

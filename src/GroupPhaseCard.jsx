@@ -3,7 +3,14 @@ import { TeamNameWithFlag } from './TeamFlag.jsx'
 import GroupTieBreakPanel from './GroupTieBreakPanel.jsx'
 import MatchFifaLink from './MatchFifaLink.jsx'
 import MatchPredictionsLink from './MatchPredictionsLink.jsx'
+import OfficialMatchBadge from './OfficialMatchBadge.jsx'
 import ScoreInput from './ScoreInput.jsx'
+import {
+  formatOfficialGroupScoreLine,
+  getGroupMatchHitTier,
+  groupHitPoints,
+  hasOfficialGroupMatchResult,
+} from './officialMatchHighlight.js'
 import { getGroupMatchKickoffLabelEs } from './groupMatchKickoffs.js'
 import { sanitizeScoreInput } from './scoreInput.js'
 
@@ -15,6 +22,7 @@ export default function GroupPhaseCard({
   showMatchPredictions,
   onOpenMatchPredictions,
   qualificationStatusByTeam = {},
+  officialPredictions = null,
 }) {
   const teams = GROUPS[group]
   const groupMatches = GROUP_STAGE_MATCHES.filter(m => m.group === group)
@@ -44,11 +52,27 @@ export default function GroupPhaseCard({
 
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="space-y-3">
-          {groupMatches.map(match => (
+          {groupMatches.map(match => {
+            const hasOfficial = hasOfficialGroupMatchResult(officialPredictions, match.id)
+            const officialScoreLine = hasOfficial
+              ? formatOfficialGroupScoreLine(officialPredictions, match.id)
+              : null
+            const userHitTier = hasOfficial
+              ? getGroupMatchHitTier(officialPredictions, match.id, predictions[match.id])
+              : null
+            const userHitPoints = userHitTier != null ? groupHitPoints(userHitTier) : null
+
+            return (
             <div
               key={match.id}
               data-porra-target={`group-match-${match.id}`}
-              className="rounded-2xl border border-white/10 bg-black/25 p-3 scroll-mt-32"
+              className={`rounded-2xl border p-3 scroll-mt-32 ${
+                hasOfficial
+                  ? userHitPoints != null && userHitPoints > 0
+                    ? 'border-emerald-400/40 bg-emerald-950/25'
+                    : 'border-emerald-400/25 bg-emerald-950/15'
+                  : 'border-white/10 bg-black/25'
+              }`}
             >
               <div className="text-xs text-sky-200/80 mb-2 text-left flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span>
@@ -56,6 +80,14 @@ export default function GroupPhaseCard({
                   <span className="text-white/50"> · </span>
                   <span>{match.kickoffLabelEs ?? getGroupMatchKickoffLabelEs(match.home, match.away) ?? match.dateLabel}</span>
                 </span>
+                {hasOfficial && officialScoreLine ? (
+                  <OfficialMatchBadge scoreLine={officialScoreLine} compact />
+                ) : null}
+                {userHitPoints != null && userHitPoints > 0 ? (
+                  <span className="text-[10px] font-bold tabular-nums text-emerald-300">
+                    Tu pronóstico: +{userHitPoints} pts
+                  </span>
+                ) : null}
                 <MatchFifaLink home={match.home} away={match.away} />
                 {showMatchPredictions && onOpenMatchPredictions ? (
                   <MatchPredictionsLink onClick={() => onOpenMatchPredictions(match)} />
@@ -94,7 +126,8 @@ export default function GroupPhaseCard({
                 </div>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
 
         <div>

@@ -1,4 +1,9 @@
 import { computeFullKnockout } from './bracketLogic.js'
+import {
+  getGroupMatchHitTier,
+  getKnockoutMatchPointsEarned,
+  groupHitPoints,
+} from './officialMatchHighlight.js'
 import { getTeamsForScoreKey } from './scoring.js'
 import { rankingDisplayName } from './userIdentity.js'
 
@@ -32,8 +37,9 @@ export function formatKnockoutScoreLine(cell) {
 /**
  * @param {Record<string, unknown>[]} users
  * @param {string} matchId
+ * @param {Record<string, unknown> | null | undefined} officialPred
  */
-export function collectGroupMatchPredictions(users, matchId) {
+export function collectGroupMatchPredictions(users, matchId, officialPred) {
   return (users || [])
     .map(user => {
       const pred =
@@ -41,14 +47,23 @@ export function collectGroupMatchPredictions(users, matchId) {
           ? user.predictions[matchId]
           : null
       const name = rankingDisplayName(user)
+      const hitTier = officialPred ? getGroupMatchHitTier(officialPred, matchId, pred) : null
+      const pointsEarned = hitTier != null ? groupHitPoints(hitTier) : null
       return {
         key: String(user.username ?? user.nickname ?? name),
         name,
         scoreLine: formatGroupScoreLine(pred),
+        hitTier,
+        pointsEarned,
         sortKey: name.toLocaleLowerCase('es'),
       }
     })
-    .sort((a, b) => a.sortKey.localeCompare(b.sortKey, 'es'))
+    .sort((a, b) => {
+      const pointsA = a.pointsEarned ?? -1
+      const pointsB = b.pointsEarned ?? -1
+      if (pointsB !== pointsA) return pointsB - pointsA
+      return a.sortKey.localeCompare(b.sortKey, 'es')
+    })
 }
 
 /**
@@ -60,7 +75,13 @@ function formatKnockoutMatchupLine(teams) {
   return `${teams.home} – ${teams.away}`
 }
 
-export function collectKnockoutMatchPredictions(users, scoreKey) {
+/**
+ * @param {Record<string, unknown>[]} users
+ * @param {string} scoreKey
+ * @param {Record<string, unknown> | null | undefined} officialKo
+ * @param {ReturnType<typeof computeFullKnockout> | null | undefined} officialBracket
+ */
+export function collectKnockoutMatchPredictions(users, scoreKey, officialKo, officialBracket) {
   return (users || [])
     .map(user => {
       const predictions =
@@ -70,13 +91,23 @@ export function collectKnockoutMatchPredictions(users, scoreKey) {
       const bracket = computeFullKnockout(predictions, ko)
       const teams = getTeamsForScoreKey(bracket, scoreKey)
       const name = rankingDisplayName(user)
+      const pointsEarned =
+        officialKo && officialBracket
+          ? getKnockoutMatchPointsEarned(officialKo, officialBracket, ko, bracket, scoreKey)
+          : null
       return {
         key: String(user.username ?? user.nickname ?? name),
         name,
         matchupLine: formatKnockoutMatchupLine(teams),
         scoreLine: formatKnockoutScoreLine(cell),
+        pointsEarned,
         sortKey: name.toLocaleLowerCase('es'),
       }
     })
-    .sort((a, b) => a.sortKey.localeCompare(b.sortKey, 'es'))
+    .sort((a, b) => {
+      const pointsA = a.pointsEarned ?? -1
+      const pointsB = b.pointsEarned ?? -1
+      if (pointsB !== pointsA) return pointsB - pointsA
+      return a.sortKey.localeCompare(b.sortKey, 'es')
+    })
 }

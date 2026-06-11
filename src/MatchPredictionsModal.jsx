@@ -2,12 +2,32 @@ import { useEffect } from 'react'
 import { Users, X } from 'lucide-react'
 
 /**
+ * @param {{ pointsEarned: number | null, hitTier?: string | null }} entry
+ */
+function entryRowClass(entry) {
+  if (entry.pointsEarned != null && entry.pointsEarned > 0) {
+    return 'border-emerald-400/45 bg-emerald-950/40'
+  }
+  if (entry.pointsEarned === 0 || entry.hitTier === 'miss') {
+    return 'border-white/10 bg-black/30 opacity-90'
+  }
+  return 'border-white/10 bg-black/30'
+}
+
+/**
  * @param {{
  *   state: null | {
  *     title: string
  *     subtitle?: string
+ *     officialScoreLine?: string | null
  *     variant?: 'group' | 'knockout'
- *     entries: { name: string, scoreLine: string, matchupLine?: string }[]
+ *     entries: {
+ *       name: string
+ *       scoreLine: string
+ *       matchupLine?: string
+ *       hitTier?: string | null
+ *       pointsEarned?: number | null
+ *     }[]
  *   }
  *   onClose: () => void
  * }} props
@@ -23,6 +43,8 @@ export default function MatchPredictionsModal({ state, onClose }) {
   }, [state, onClose])
 
   if (!state) return null
+
+  const hasOfficialScoring = state.entries.some(entry => entry.pointsEarned != null)
 
   return (
     <div
@@ -48,9 +70,20 @@ export default function MatchPredictionsModal({ state, onClose }) {
               {state.subtitle ? (
                 <p className="text-xs text-sky-200/75 mt-1 mb-0 leading-snug">{state.subtitle}</p>
               ) : null}
+              {state.officialScoreLine ? (
+                <p className="text-xs text-emerald-200/90 mt-1 mb-0 leading-snug">
+                  Resultado oficial:{' '}
+                  <strong className="font-bold tabular-nums">{state.officialScoreLine}</strong>
+                </p>
+              ) : null}
               {state.variant === 'knockout' ? (
                 <p className="text-[11px] text-cyan-200/65 mt-1.5 mb-0 leading-snug">
                   Cada participante puede tener equipos distintos en el mismo hueco del cuadro.
+                </p>
+              ) : null}
+              {hasOfficialScoring ? (
+                <p className="text-[11px] text-emerald-200/75 mt-1.5 mb-0 leading-snug">
+                  Verde = pronóstico que suma puntos según el reglamento.
                 </p>
               ) : null}
             </div>
@@ -69,24 +102,50 @@ export default function MatchPredictionsModal({ state, onClose }) {
           {state.entries.length === 0 ? (
             <p className="text-sm text-slate-400 m-0">No hay participantes registrados.</p>
           ) : (
-            state.entries.map(entry => (
-              <div
-                key={entry.key ?? entry.name}
-                className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-white truncate">{entry.name}</span>
-                  <span className="text-sm font-bold tabular-nums text-amber-200 shrink-0">
-                    {entry.scoreLine}
-                  </span>
+            state.entries.map(entry => {
+              const earnedPoints = entry.pointsEarned ?? 0
+              const isHit = entry.pointsEarned != null && earnedPoints > 0
+              return (
+                <div
+                  key={entry.key ?? entry.name}
+                  className={`rounded-xl border px-3 py-2.5 ${entryRowClass(entry)}`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span
+                      className={`text-sm font-medium truncate ${
+                        isHit ? 'text-emerald-100' : 'text-white'
+                      }`}
+                    >
+                      {entry.name}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {entry.pointsEarned != null && earnedPoints > 0 ? (
+                        <span className="text-[10px] font-bold tabular-nums text-emerald-300 bg-emerald-500/20 border border-emerald-400/30 rounded px-1.5 py-0.5">
+                          +{earnedPoints}
+                        </span>
+                      ) : null}
+                      <span
+                        className={`text-sm font-bold tabular-nums ${
+                          isHit ? 'text-emerald-200' : 'text-amber-200'
+                        }`}
+                      >
+                        {entry.scoreLine}
+                      </span>
+                    </div>
+                  </div>
+                  {entry.matchupLine ? (
+                    <p
+                      className={`text-xs mt-1 mb-0 truncate ${
+                        isHit ? 'text-emerald-200/70' : 'text-sky-300/75'
+                      }`}
+                      title={entry.matchupLine}
+                    >
+                      {entry.matchupLine}
+                    </p>
+                  ) : null}
                 </div>
-                {entry.matchupLine ? (
-                  <p className="text-xs text-sky-300/75 mt-1 mb-0 truncate" title={entry.matchupLine}>
-                    {entry.matchupLine}
-                  </p>
-                ) : null}
-              </div>
-            ))
+              )
+            })
           )}
         </div>
 
