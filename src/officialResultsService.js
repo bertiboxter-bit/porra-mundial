@@ -104,7 +104,7 @@ export async function saveOfficialAndRecalculatePoints({ predictions, knockout, 
   const { data: users, error: listErr } = await supabase
     .from('predictions')
     .select(
-      'username, nickname, predictions, knockout, specials, points, points_previous, rank_movement, updated_at, updatedAt',
+      'username, nickname, predictions, knockout, specials, points, points_previous, rank_movement, updated_at',
     )
   if (listErr) throw listErr
 
