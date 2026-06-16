@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarClock, ChevronLeft, ChevronRight, ExternalLink, Users } from 'lucide-react'
+import { CalendarClock, ChevronLeft, ChevronRight, ExternalLink, Shield, Users } from 'lucide-react'
 import OfficialMatchBadge from './OfficialMatchBadge.jsx'
 import { TeamFlag } from './TeamFlag.jsx'
 import { FIFA_FIXTURES_URL } from './fifaMatchUrls.js'
@@ -36,6 +36,7 @@ function predictionRowClass(entry) {
  *   onOpenGroupMatchPredictions: (match: Record<string, unknown>) => void
  *   onOpenKnockoutMatchPredictions: (payload: { title: string, subtitle: string, scoreKey: string }) => void
  *   onScrollToMatch: (payload: { scrollTargetId: string, group?: string }) => void
+ *   onOpenOfficialMatch: (scrollTargetId: string) => void
  * }} props
  */
 export default function TodaysMatchesPanel({
@@ -52,6 +53,7 @@ export default function TodaysMatchesPanel({
   onOpenGroupMatchPredictions,
   onOpenKnockoutMatchPredictions,
   onScrollToMatch,
+  onOpenOfficialMatch,
 }) {
   const tournamentDateKeys = useMemo(() => getTournamentDateKeys(), [])
   const [selectedDayKey, setSelectedDayKey] = useState(() => resolveDefaultDayKey())
@@ -244,6 +246,15 @@ export default function TodaysMatchesPanel({
                       className="text-[10px] font-semibold text-sky-300/90 hover:text-sky-100 underline decoration-sky-400/35 underline-offset-2"
                     >
                       Ir al partido
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onOpenOfficialMatch(match.scrollTargetId)}
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-200/95 hover:text-amber-100 underline decoration-amber-400/35 underline-offset-2"
+                      title="Abrir el panel de resultados oficiales en este partido"
+                    >
+                      <Shield size={11} aria-hidden />
+                      Resultado oficial
                     </button>
                   </div>
                 </div>

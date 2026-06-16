@@ -60,7 +60,9 @@ import {
   computePorraProgress,
   findNextPendingTarget,
   porraTargetSelector,
+  scrollToPorraTarget,
 } from './porraProgress.js'
+import { buildOfficialMatchUrl, isOfficialResultsHash, OFFICIAL_RESULTS_HASH } from './officialResultsNavigation.js'
 import PorraProgressBar from './PorraProgressBar.jsx'
 import PorraComparisonModal from './PorraComparisonModal.jsx'
 import PorraSummaryModal from './PorraSummaryModal.jsx'
@@ -100,8 +102,6 @@ import {
 } from './rankingUtils.js'
 import { knockoutPhaseAdvancementRulesText } from './knockoutPhaseAdvancement.js'
 
-const OFFICIAL_HASH = '#resultados-oficiales'
-
 const GROUP_VIEW_STORAGE_KEY = 'porra_mundial_group_view'
 const GROUP_TAB_STORAGE_KEY = 'porra_mundial_group_tab'
 
@@ -120,7 +120,7 @@ async function fetchAllPredictions() {
 
 export default function WorldCupPoolApp() {
   const [panel, setPanel] = useState(() =>
-    typeof window !== 'undefined' && window.location.hash === OFFICIAL_HASH ? 'official' : 'main',
+    typeof window !== 'undefined' && isOfficialResultsHash(window.location.hash) ? 'official' : 'main',
   )
 
   const [username, setUsername] = useState(() =>
@@ -262,8 +262,7 @@ export default function WorldCupPoolApp() {
   }, [activeGroupTab])
 
   useEffect(() => {
-    const onHash = () =>
-      setPanel(window.location.hash === OFFICIAL_HASH ? 'official' : 'main')
+    const onHash = () => setPanel(isOfficialResultsHash(window.location.hash) ? 'official' : 'main')
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
@@ -615,24 +614,14 @@ export default function WorldCupPoolApp() {
 
       const sectionId = scrollTargetId.startsWith('group-') ? 'section-grupos' : 'section-knockout'
       scrollToSection(sectionId)
-
-      let attempts = 0
-      const maxAttempts = 8
-      const attemptScroll = () => {
-        const el = document.querySelector(porraTargetSelector(scrollTargetId))
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          return
-        }
-        attempts += 1
-        if (attempts < maxAttempts) {
-          window.setTimeout(attemptScroll, 100)
-        }
-      }
-      window.setTimeout(attemptScroll, 150)
+      scrollToPorraTarget(scrollTargetId)
     },
     [scrollToSection],
   )
+
+  const openOfficialMatchPanel = useCallback((scrollTargetId) => {
+    window.location.hash = buildOfficialMatchUrl(scrollTargetId)
+  }, [])
 
   const patchKoScore = (key, side, val) => {
     if (isReadOnly) return
@@ -734,6 +723,7 @@ export default function WorldCupPoolApp() {
           onOpenGroupMatchPredictions={openGroupMatchPredictions}
           onOpenKnockoutMatchPredictions={openKnockoutMatchPredictions}
           onScrollToMatch={scrollToMatchTarget}
+          onOpenOfficialMatch={openOfficialMatchPanel}
         />
 
         {sessionConnected ? (
@@ -761,7 +751,7 @@ export default function WorldCupPoolApp() {
               </h1>
               <p className="mt-0 mb-0">
                 <a
-                  href={OFFICIAL_HASH}
+                  href={OFFICIAL_RESULTS_HASH}
                   className="text-sm font-semibold text-amber-200 hover:text-amber-100 underline decoration-amber-200/50 underline-offset-2"
                 >
                   Panel resultados oficiales (admin)

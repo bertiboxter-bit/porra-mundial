@@ -33,6 +33,8 @@ import {
 import { mergeSpecials } from './porraSpecials.js'
 import { WORLD_CUP_GOALKEEPER_OPTIONS } from './worldCup2026Goalkeepers.js'
 import { WORLD_CUP_STAR_PLAYER_OPTIONS } from './worldCup2026StarPlayers.js'
+import { parseOfficialMatchTargetFromHash } from './officialResultsNavigation.js'
+import { scrollToPorraTarget } from './porraProgress.js'
 
 export default function OfficialResultsPanel({ onBack }) {
   const [predictions, setPredictions] = useState({})
@@ -91,6 +93,31 @@ export default function OfficialResultsPanel({ onBack }) {
       cancelled = true
     }
   }, [showModal, loadOfficialResultsHistory])
+
+  const highlightOfficialMatch = useCallback(el => {
+    el.classList.add('ring-2', 'ring-amber-400/70', 'ring-offset-2', 'ring-offset-slate-900')
+    window.setTimeout(() => {
+      el.classList.remove('ring-2', 'ring-amber-400/70', 'ring-offset-2', 'ring-offset-slate-900')
+    }, 2500)
+  }, [])
+
+  const scrollToOfficialMatchFromHash = useCallback(() => {
+    const targetId = parseOfficialMatchTargetFromHash()
+    if (!targetId) return
+    scrollToPorraTarget(targetId, { onFound: highlightOfficialMatch })
+  }, [highlightOfficialMatch])
+
+  useEffect(() => {
+    if (loadBusy) return
+    scrollToOfficialMatchFromHash()
+  }, [loadBusy, scrollToOfficialMatchFromHash])
+
+  useEffect(() => {
+    if (loadBusy) return
+    const onHash = () => scrollToOfficialMatchFromHash()
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [loadBusy, scrollToOfficialMatchFromHash])
 
   const handleSavedByNameChange = useCallback(value => {
     setSavedByName(value)
@@ -221,7 +248,8 @@ export default function OfficialResultsPanel({ onBack }) {
                           {groupMatches.map(match => (
                             <div
                               key={match.id}
-                              className="rounded-2xl border border-white/10 bg-black/25 p-3"
+                              data-porra-target={`group-match-${match.id}`}
+                              className="rounded-2xl border border-white/10 bg-black/25 p-3 scroll-mt-32"
                             >
                               <div className="text-xs text-sky-200/80 mb-2 text-left flex flex-wrap items-center gap-x-2 gap-y-1">
                                 <span>

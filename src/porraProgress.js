@@ -192,3 +192,27 @@ export function findNextPendingTarget(predictions, knockoutScores, specials) {
 export function porraTargetSelector(targetId) {
   return `[${PORRA_TARGET_ATTR}="${targetId}"]`
 }
+
+/**
+ * @param {string} targetId
+ * @param {{ onFound?: (el: Element) => void }} [options]
+ */
+export function scrollToPorraTarget(targetId, options = {}) {
+  let attempts = 0
+  const maxAttempts = 8
+
+  const attemptScroll = () => {
+    const el = document.querySelector(porraTargetSelector(targetId))
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      options.onFound?.(el)
+      return
+    }
+    attempts += 1
+    if (attempts < maxAttempts) {
+      window.setTimeout(attemptScroll, 100)
+    }
+  }
+
+  window.setTimeout(attemptScroll, 150)
+}
