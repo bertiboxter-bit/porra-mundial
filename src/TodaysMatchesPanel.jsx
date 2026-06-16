@@ -243,23 +243,23 @@ export default function TodaysMatchesPanel({
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-[1fr_auto_1fr] gap-2 sm:gap-3 items-center mb-3">
-                  <div className="flex items-center justify-end sm:justify-end gap-2 min-w-0">
+                <div className="flex items-center gap-2 sm:gap-3 mb-3 min-w-0">
+                  <div className="flex items-center justify-end gap-1.5 min-w-0 flex-1">
                     {match.home ? <TeamFlag teamName={match.home} size={18} /> : null}
                     <span className="font-semibold text-white text-sm text-right truncate">
                       {homeName}
                     </span>
                   </div>
-                  <div className="flex flex-col items-center gap-0.5 px-2">
+                  <div className="shrink-0 px-1 text-center">
                     {match.hasOfficial && match.officialScoreLine ? (
-                      <span className="text-lg font-black tabular-nums text-emerald-200">
+                      <span className="text-base sm:text-lg font-black tabular-nums text-emerald-200 whitespace-nowrap">
                         {match.officialScoreLine}
                       </span>
                     ) : (
                       <span className="text-xs text-white/40 font-semibold">vs</span>
                     )}
                   </div>
-                  <div className="flex items-center justify-start gap-2 min-w-0">
+                  <div className="flex items-center justify-start gap-1.5 min-w-0 flex-1">
                     <span className="font-semibold text-white text-sm truncate">{awayName}</span>
                     {match.away ? <TeamFlag teamName={match.away} size={18} /> : null}
                   </div>
