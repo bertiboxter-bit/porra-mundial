@@ -204,6 +204,7 @@ export function buildDayMatchesPanelData({
       kickoff: kickoffTimeFromLabel(match.kickoffLabelEs),
       kickoffUtc: match.kickoffUtc,
       scrollTargetId: `group-match-${match.id}`,
+      group: match.group,
       hasOfficial,
       officialScoreLine: hasOfficial
         ? formatOfficialGroupScoreLine(officialPredictions, match.id)

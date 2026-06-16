@@ -185,16 +185,6 @@ export default function WorldCupPoolApp() {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
 
-  const scrollToMatchTarget = useCallback(targetId => {
-    const el = document.querySelector(`[data-porra-target="${targetId}"]`)
-    if (!el) return
-    const sectionId = targetId.startsWith('group-') ? 'section-grupos' : 'section-knockout'
-    scrollToSection(sectionId)
-    window.setTimeout(() => {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }, 280)
-  }, [scrollToSection])
-
   const [predictionsLockedGlobally, setPredictionsLockedGlobally] = useState(false)
   const [lockModalMode, setLockModalMode] = useState(null)
   const [porraViewUser, setPorraViewUser] = useState(null)
@@ -615,6 +605,34 @@ export default function WorldCupPoolApp() {
         ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, 280)
   }, [predictions, knockoutScores, specials, podiumTeams, scrollToSection, showModal])
+
+  const scrollToMatchTarget = useCallback(
+    ({ scrollTargetId, group }) => {
+      if (group) {
+        setActiveGroupTab(group)
+        setGroupViewMode('tabs')
+      }
+
+      const sectionId = scrollTargetId.startsWith('group-') ? 'section-grupos' : 'section-knockout'
+      scrollToSection(sectionId)
+
+      let attempts = 0
+      const maxAttempts = 8
+      const attemptScroll = () => {
+        const el = document.querySelector(porraTargetSelector(scrollTargetId))
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          return
+        }
+        attempts += 1
+        if (attempts < maxAttempts) {
+          window.setTimeout(attemptScroll, 100)
+        }
+      }
+      window.setTimeout(attemptScroll, 150)
+    },
+    [scrollToSection],
+  )
 
   const patchKoScore = (key, side, val) => {
     if (isReadOnly) return

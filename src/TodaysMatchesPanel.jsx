@@ -35,7 +35,7 @@ function predictionRowClass(entry) {
  *   sessionConnected: boolean
  *   onOpenGroupMatchPredictions: (match: Record<string, unknown>) => void
  *   onOpenKnockoutMatchPredictions: (payload: { title: string, subtitle: string, scoreKey: string }) => void
- *   onScrollToMatch: (scrollTargetId: string) => void
+ *   onScrollToMatch: (payload: { scrollTargetId: string, group?: string }) => void
  * }} props
  */
 export default function TodaysMatchesPanel({
@@ -118,7 +118,7 @@ export default function TodaysMatchesPanel({
               Partidos del día
             </h2>
             <p className="text-xs text-sky-200/75 mt-1 mb-0 leading-snug">
-              Horarios en España (calendario FIFA). Resultados oficiales y pronósticos sin salir de aquí.
+              Horarios en España (calendario FIFA). Resultados oficiales y pronósticos.
             </p>
           </div>
         </div>
@@ -235,7 +235,12 @@ export default function TodaysMatchesPanel({
                     ) : null}
                     <button
                       type="button"
-                      onClick={() => onScrollToMatch(match.scrollTargetId)}
+                      onClick={() =>
+                        onScrollToMatch({
+                          scrollTargetId: match.scrollTargetId,
+                          group: match.kind === 'group' ? match.group : undefined,
+                        })
+                      }
                       className="text-[10px] font-semibold text-sky-300/90 hover:text-sky-100 underline decoration-sky-400/35 underline-offset-2"
                     >
                       Ir al partido
@@ -284,18 +289,33 @@ export default function TodaysMatchesPanel({
                 ) : null}
 
                 {predictionsLockedGlobally && predictionsCount > 0 ? (
-                  <div className="border-t border-white/8 pt-2 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => toggleExpanded(match.key)}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-cyan-300 hover:text-cyan-100 transition"
-                    >
-                      <Users size={13} aria-hidden />
-                      {isExpanded ? 'Ocultar pronósticos' : `Ver pronósticos (${predictionsCount})`}
-                    </button>
+                  <div className="border-t border-white/8 pt-3 mt-2">
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(match.key)}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-cyan-300 hover:text-cyan-100 transition"
+                      >
+                        <Users size={13} aria-hidden />
+                        {isExpanded ? 'Ocultar pronósticos' : 'Ver pronósticos'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (match.kind === 'group' && match.groupMatch) {
+                            onOpenGroupMatchPredictions(match.groupMatch)
+                          } else if (match.kind === 'knockout' && match.knockoutMeta) {
+                            onOpenKnockoutMatchPredictions(match.knockoutMeta)
+                          }
+                        }}
+                        className="text-[11px] font-semibold text-cyan-300/90 hover:text-cyan-100 underline decoration-cyan-400/35 underline-offset-2"
+                      >
+                        Abrir en modal
+                      </button>
+                    </div>
 
                     {isExpanded ? (
-                      <ul className="mt-2 space-y-1 max-h-48 overflow-y-auto list-none m-0 p-0">
+                      <ul className="mt-3 space-y-1 max-h-48 overflow-y-auto list-none m-0 p-0">
                         {match.predictionEntries.map(entry => {
                           const isHit = entry.pointsEarned != null && entry.pointsEarned > 0
                           return (
@@ -329,20 +349,6 @@ export default function TodaysMatchesPanel({
                         })}
                       </ul>
                     ) : null}
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (match.kind === 'group' && match.groupMatch) {
-                          onOpenGroupMatchPredictions(match.groupMatch)
-                        } else if (match.kind === 'knockout' && match.knockoutMeta) {
-                          onOpenKnockoutMatchPredictions(match.knockoutMeta)
-                        }
-                      }}
-                      className="mt-2 text-[10px] font-semibold text-cyan-300/90 hover:text-cyan-100 underline decoration-cyan-400/35 underline-offset-2"
-                    >
-                      Abrir en modal
-                    </button>
                   </div>
                 ) : predictionsLockedGlobally ? (
                   <p className="text-[11px] text-sky-200/55 m-0 mt-1">
