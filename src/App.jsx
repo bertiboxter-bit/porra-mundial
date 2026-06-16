@@ -80,6 +80,7 @@ import PorraStatisticsSection from './PorraStatisticsSection.jsx'
 import PrizesModal from './PrizesModal.jsx'
 import OfficialLastUpdateBanner from './OfficialLastUpdateBanner.jsx'
 import PersonalRankingSummaryCard from './PersonalRankingSummaryCard.jsx'
+import TodaysMatchesPanel from './TodaysMatchesPanel.jsx'
 import { buildPersonalRankingSummary } from './personalRankingSummary.js'
 import {
   collectGroupMatchPredictions,
@@ -183,6 +184,16 @@ export default function WorldCupPoolApp() {
   const scrollToSection = useCallback(id => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
+
+  const scrollToMatchTarget = useCallback(targetId => {
+    const el = document.querySelector(`[data-porra-target="${targetId}"]`)
+    if (!el) return
+    const sectionId = targetId.startsWith('group-') ? 'section-grupos' : 'section-knockout'
+    scrollToSection(sectionId)
+    window.setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 280)
+  }, [scrollToSection])
 
   const [predictionsLockedGlobally, setPredictionsLockedGlobally] = useState(false)
   const [lockModalMode, setLockModalMode] = useState(null)
@@ -544,6 +555,11 @@ export default function WorldCupPoolApp() {
     [predictions, knockoutScores],
   )
 
+  const displayBracket = useMemo(
+    () => officialBracket ?? fullBracket,
+    [officialBracket, fullBracket],
+  )
+
   const groupQualificationStatus = useMemo(
     () => buildGroupQualificationStatus(predictions),
     [predictions],
@@ -685,6 +701,22 @@ export default function WorldCupPoolApp() {
         <PorraCountdownStrip />
 
         <OfficialLastUpdateBanner latestUpdate={latestOfficialUpdate} />
+
+        <TodaysMatchesPanel
+          savedUsers={savedUsers}
+          userPredictions={predictions}
+          userKnockout={knockoutScores}
+          userBracket={fullBracket}
+          displayBracket={displayBracket}
+          officialPredictions={officialPredictions}
+          officialKnockout={officialKnockout}
+          officialBracket={officialBracket}
+          predictionsLockedGlobally={predictionsLockedGlobally}
+          sessionConnected={sessionConnected}
+          onOpenGroupMatchPredictions={openGroupMatchPredictions}
+          onOpenKnockoutMatchPredictions={openKnockoutMatchPredictions}
+          onScrollToMatch={scrollToMatchTarget}
+        />
 
         {sessionConnected ? (
           <PersonalRankingSummaryCard summary={personalRankingSummary} />
