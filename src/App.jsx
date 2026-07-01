@@ -44,6 +44,7 @@ import {
   setPredictionsGloballyLocked,
 } from './officialResultsService.js'
 import { getScoreBreakdown } from './scoring.js'
+import { prepareBreakdownLinesForDisplay } from './pointsBreakdownDisplay.js'
 import { defaultSpecials, mergeSpecials } from './porraSpecials.js'
 import { podiumTeamsFromBracket } from './porraBracketPodium.js'
 import { WORLD_CUP_STAR_PLAYER_OPTIONS } from './worldCup2026StarPlayers.js'
@@ -160,7 +161,7 @@ export default function WorldCupPoolApp() {
       setPointsBreakdown({
         status: 'ready',
         title,
-        lines,
+        lines: prepareBreakdownLinesForDisplay(lines),
         total,
         storedPoints: user.points ?? 0,
       })

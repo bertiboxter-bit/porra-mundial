@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CalendarClock, ChevronLeft, ChevronRight, ExternalLink, Shield, Users } from 'lucide-react'
 import OfficialMatchBadge from './OfficialMatchBadge.jsx'
+import KnockoutMatchupMiniPanel from './KnockoutMatchupMiniPanel.jsx'
 import { TeamFlag } from './TeamFlag.jsx'
 import { FIFA_FIXTURES_URL } from './fifaMatchUrls.js'
 import {
@@ -299,6 +300,16 @@ export default function TodaysMatchesPanel({
                   </div>
                 ) : null}
 
+                {match.kind === 'knockout' &&
+                predictionsLockedGlobally &&
+                predictionsCount > 0 &&
+                match.knockoutMatchupStats ? (
+                  <KnockoutMatchupMiniPanel
+                    officialMatchupLine={match.officialMatchupLine}
+                    stats={match.knockoutMatchupStats}
+                  />
+                ) : null}
+
                 {predictionsLockedGlobally && predictionsCount > 0 ? (
                   <div className="border-t border-white/8 pt-3 mt-2">
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -326,39 +337,72 @@ export default function TodaysMatchesPanel({
                     </div>
 
                     {isExpanded ? (
-                      <ul className="mt-3 space-y-1 max-h-48 overflow-y-auto list-none m-0 p-0">
+                      <>
+                        {match.kind === 'knockout' && match.officialMatchupLine ? (
+                          <p className="text-[10px] text-sky-200/65 m-0 mt-2 mb-1 leading-snug">
+                            Cruce oficial:{' '}
+                            <span className="text-sky-100/90 font-medium">{match.officialMatchupLine}</span>
+                          </p>
+                        ) : null}
+                        <ul className="mt-2 space-y-1.5 max-h-56 overflow-y-auto list-none m-0 p-0">
                         {match.predictionEntries.map(entry => {
                           const isHit = entry.pointsEarned != null && entry.pointsEarned > 0
+                          const wrongBracket =
+                            match.kind === 'knockout' &&
+                            match.hasOfficial &&
+                            match.officialMatchupLine &&
+                            entry.matchupLine &&
+                            entry.matchupLine !== match.officialMatchupLine
                           return (
                             <li
                               key={entry.key ?? entry.name}
-                              className={`rounded-lg border px-2.5 py-1.5 flex items-center justify-between gap-2 ${predictionRowClass(entry)}`}
+                              className={`rounded-lg border px-2.5 py-2 ${predictionRowClass(entry)}`}
                             >
-                              <span
-                                className={`text-xs font-medium truncate ${
-                                  isHit ? 'text-emerald-100' : 'text-white/90'
-                                }`}
-                              >
-                                {entry.name}
-                              </span>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                {entry.pointsEarned != null && entry.pointsEarned > 0 ? (
-                                  <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-400/30 rounded px-1 py-0.5">
-                                    +{entry.pointsEarned}
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <span
+                                    className={`text-xs font-medium block truncate ${
+                                      isHit ? 'text-emerald-100' : 'text-white/90'
+                                    }`}
+                                  >
+                                    {entry.name}
                                   </span>
-                                ) : null}
-                                <span
-                                  className={`text-xs font-bold tabular-nums ${
-                                    isHit ? 'text-emerald-200' : 'text-amber-200/90'
-                                  }`}
-                                >
-                                  {entry.scoreLine}
-                                </span>
+                                  {entry.matchupLine ? (
+                                    <span
+                                      className={`text-[10px] block mt-0.5 leading-snug ${
+                                        wrongBracket
+                                          ? 'text-amber-200/75'
+                                          : isHit
+                                            ? 'text-emerald-200/70'
+                                            : 'text-sky-300/75'
+                                      }`}
+                                      title={entry.matchupLine}
+                                    >
+                                      {entry.matchupLine}
+                                      {wrongBracket ? ' · cruce distinto' : ''}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                                  {entry.pointsEarned != null && entry.pointsEarned > 0 ? (
+                                    <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-400/30 rounded px-1 py-0.5">
+                                      +{entry.pointsEarned}
+                                    </span>
+                                  ) : null}
+                                  <span
+                                    className={`text-xs font-bold tabular-nums ${
+                                      isHit ? 'text-emerald-200' : 'text-amber-200/90'
+                                    }`}
+                                  >
+                                    {entry.scoreLine}
+                                  </span>
+                                </div>
                               </div>
                             </li>
                           )
                         })}
-                      </ul>
+                        </ul>
+                      </>
                     ) : null}
                   </div>
                 ) : predictionsLockedGlobally ? (

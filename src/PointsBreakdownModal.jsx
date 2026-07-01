@@ -83,10 +83,14 @@ export default function PointsBreakdownModal({ state, onClose }) {
                   anterior.
                 </p>
               ) : (
-                <ul className="space-y-3 list-none m-0 p-0">
+                <>
+                  <p className="text-[11px] text-sky-200/65 m-0 mb-3 leading-snug">
+                    Ordenado del más reciente al más antiguo según el calendario del torneo.
+                  </p>
+                  <ul className="space-y-2.5 list-none m-0 p-0">
                   {state.lines.map((row, i) => (
                     <li
-                      key={`${row.matchLabel}-${i}`}
+                      key={`${row.matchLabel}-${row.sortKey ?? i}-${row.points}`}
                       className="rounded-xl border border-white/10 bg-black/25 p-3 text-sm"
                     >
                       <div className="flex items-start justify-between gap-2 mb-1">
@@ -96,9 +100,22 @@ export default function PointsBreakdownModal({ state, onClose }) {
                         </span>
                       </div>
                       <p className="text-sky-100/80 m-0 text-xs leading-relaxed">{row.reason}</p>
+                      {row.teams && row.teams.length > 1 ? (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {row.teams.map(team => (
+                            <span
+                              key={team}
+                              className="text-[10px] font-medium text-emerald-200/90 bg-emerald-500/15 border border-emerald-400/25 rounded px-1.5 py-0.5"
+                            >
+                              {team}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
+                </>
               )}
 
               <div className="mt-5 pt-4 border-t border-white/10 space-y-2 text-sm">

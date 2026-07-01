@@ -9,6 +9,13 @@ import {
 } from './bracketLogic.js'
 import { mergeSpecials } from './porraSpecials.js'
 import { getKnockoutPhaseAdvancementScoreParts } from './knockoutPhaseAdvancement.js'
+import {
+  groupMatchSortKey,
+  groupStandingSortKey,
+  knockoutAdvancementSortKey,
+  knockoutMatchSortKey,
+  specialSortKey,
+} from './scoreBreakdownSort.js'
 
 function norm(s) {
   return String(s ?? '')
@@ -138,6 +145,8 @@ function pushPodiumTriplet(lines, mergedUser, mergedOfficial, keys, labelBase) {
       matchLabel: `${labelBase} (${i + 1}º)`,
       points: w,
       reason: `Acertaste el ${i + 1}º puesto oficial: «${shown}».`,
+      kind: 'special',
+      sortKey: specialSortKey('podium'),
     })
   }
 }
@@ -176,10 +185,10 @@ export function getTeamsForScoreKey(bracket, scoreKey) {
  * @param {Record<string, { home?: string, away?: string }>} officialKo
  * @param {ReturnType<typeof computeFullKnockout>} officialBracket
  * @param {Record<string, string>} officialSpecials
- * @returns {{ total: number, lines: { matchLabel: string, points: number, reason: string }[] }}
+ * @returns {{ total: number, lines: { matchLabel: string, points: number, reason: string, sortKey?: number, kind?: string }[] }}
  */
 export function getScoreBreakdown(userRow, officialPred, officialKo, officialBracket, officialSpecials) {
-  /** @type {{ matchLabel: string, points: number, reason: string }[]} */
+  /** @type {{ matchLabel: string, points: number, reason: string, sortKey?: number, kind?: string }[]} */
   const lines = []
   const pred =
     userRow.predictions && typeof userRow.predictions === 'object' ? userRow.predictions : {}
@@ -197,12 +206,16 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
         matchLabel: label,
         points: 3,
         reason: `Marcador exacto: pronosticaste ${up.h}–${up.a}, igual que el oficial.`,
+        kind: 'group-match',
+        sortKey: groupMatchSortKey(m.fifa),
       })
     } else if (groupOutcome(up.h, up.a) === groupOutcome(op.h, op.a)) {
       lines.push({
         matchLabel: label,
         points: 1,
         reason: `Ganador o empate acertado: tu ${up.h}–${up.a} vs oficial ${op.h}–${op.a}.`,
+        kind: 'group-match',
+        sortKey: groupMatchSortKey(m.fifa),
       })
     }
   }
@@ -221,6 +234,8 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
         matchLabel: `Grupo ${g} · Clasificación`,
         points: 2,
         reason: `Posición ${pos}ª exacta en el grupo (${oTable[i].team}); no hace falta que clasifique a dieciseisavos.`,
+        kind: 'group-standing',
+        sortKey: groupStandingSortKey(g),
       })
     }
   }
@@ -249,12 +264,20 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
         matchLabel: label,
         points: part.points,
         reason: part.reason,
+        kind: 'knockout-match',
+        sortKey: knockoutMatchSortKey(key),
       })
     }
   }
 
   for (const part of getKnockoutPhaseAdvancementScoreParts(officialBracket, officialKo, userBracket)) {
-    lines.push(part)
+    lines.push({
+      matchLabel: part.matchLabel,
+      points: part.points,
+      reason: part.reason,
+      kind: 'knockout-advancement',
+      sortKey: knockoutAdvancementSortKey(part.phaseId),
+    })
   }
 
   const fin = officialKo['fin-104']
@@ -271,6 +294,8 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
           matchLabel: 'Predicción especial · Campeón',
           points: 10,
           reason: `Acertaste al campeón: «${champ}».`,
+          kind: 'special',
+          sortKey: specialSortKey('champion'),
         })
       }
       if (runner && norm(spec.runnerUp) === norm(runner)) {
@@ -278,6 +303,8 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
           matchLabel: 'Predicción especial · Subcampeón',
           points: 5,
           reason: `Acertaste al subcampeón: «${runner}».`,
+          kind: 'special',
+          sortKey: specialSortKey('runnerUp'),
         })
       }
     }
@@ -295,6 +322,8 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
           matchLabel: 'Predicción especial · 3.er puesto',
           points: 4,
           reason: `Acertaste el equipo del tercer puesto: «${third}».`,
+          kind: 'special',
+          sortKey: specialSortKey('thirdPlace'),
         })
       }
     }
@@ -307,6 +336,8 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
       matchLabel: 'Predicción especial · Guante de oro',
       points: 5,
       reason: `Acertaste el guante de oro: «${ospec.goldenGlove}».`,
+      kind: 'special',
+      sortKey: specialSortKey('other'),
     })
   }
 
@@ -315,6 +346,8 @@ export function getScoreBreakdown(userRow, officialPred, officialKo, officialBra
       matchLabel: 'Predicción especial · Máximo asistente',
       points: 5,
       reason: `Coincide con el máximo asistente oficial: «${ospec.topAssist}».`,
+      kind: 'special',
+      sortKey: specialSortKey('other'),
     })
   }
 

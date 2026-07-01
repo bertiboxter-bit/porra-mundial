@@ -23,6 +23,8 @@ import {
   formatGroupScoreLine,
   formatKnockoutScoreLine,
 } from './matchPredictions.js'
+import { getTeamsForScoreKey } from './scoring.js'
+import { buildKnockoutMatchupStats } from './knockoutMatchupStats.js'
 
 const MADRID_TZ = 'Europe/Madrid'
 
@@ -228,6 +230,12 @@ export function buildDayMatchesPanelData({
 
     const hasOfficial = hasOfficialKnockoutMatchResult(officialKnockout, scoreKey)
     const userCell = userKnockout?.[scoreKey]
+    const officialTeams =
+      officialBracket && scoreKey ? getTeamsForScoreKey(officialBracket, scoreKey) : null
+    const officialMatchupLine =
+      officialTeams?.home && officialTeams?.away
+        ? `${officialTeams.home} – ${officialTeams.away}`
+        : null
     const userPointsEarned =
       hasOfficial && officialBracket && userBracket
         ? getKnockoutMatchPointsEarned(
@@ -238,6 +246,11 @@ export function buildDayMatchesPanelData({
             scoreKey,
           )
         : null
+
+    const predictionEntries = predictionsLockedGlobally
+      ? collectKnockoutMatchPredictions(savedUsers, scoreKey, officialKnockout, officialBracket)
+      : []
+    const knockoutMatchupStats = buildKnockoutMatchupStats(predictionEntries, officialMatchupLine)
 
     matches.push({
       key: `ko-${scoreKey}`,
@@ -257,9 +270,9 @@ export function buildDayMatchesPanelData({
         : null,
       userScoreLine: userCell ? formatKnockoutScoreLine(userCell) : null,
       userPointsEarned,
-      predictionEntries: predictionsLockedGlobally
-        ? collectKnockoutMatchPredictions(savedUsers, scoreKey, officialKnockout, officialBracket)
-        : [],
+      officialMatchupLine,
+      predictionEntries,
+      knockoutMatchupStats,
       knockoutMeta: {
         title:
           homeTeam && awayTeam ? `${homeTeam} – ${awayTeam}` : `${homeLabel} – ${awayLabel}`,
