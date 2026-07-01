@@ -1,6 +1,9 @@
 /** Último usuario (privado) recordado en este navegador */
 export const USERNAME_STORAGE_KEY = 'porra_mundial_username'
 
+/** Sesión activa hasta pulsar Desconectar */
+export const SESSION_ACTIVE_STORAGE_KEY = 'porra_mundial_session_active'
+
 export function normalizeUsername(raw) {
   if (!raw || typeof raw !== 'string') return ''
   let s = raw
@@ -45,5 +48,31 @@ export function readStoredUsername() {
     return localStorage.getItem(USERNAME_STORAGE_KEY) || ''
   } catch {
     return ''
+  }
+}
+
+export function readSessionActive() {
+  try {
+    return localStorage.getItem(SESSION_ACTIVE_STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function writeSessionActive(active) {
+  try {
+    if (active) localStorage.setItem(SESSION_ACTIVE_STORAGE_KEY, '1')
+    else localStorage.removeItem(SESSION_ACTIVE_STORAGE_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearStoredSession() {
+  try {
+    localStorage.removeItem(USERNAME_STORAGE_KEY)
+    localStorage.removeItem(SESSION_ACTIVE_STORAGE_KEY)
+  } catch {
+    /* ignore */
   }
 }

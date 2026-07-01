@@ -74,6 +74,9 @@ import {
   validateDisplayName,
   rankingDisplayName,
   readStoredUsername,
+  readSessionActive,
+  writeSessionActive,
+  clearStoredSession,
 } from './userIdentity.js'
 import { FIFA_FIXTURES_URL } from './fifaMatchUrls.js'
 import MatchPredictionsModal from './MatchPredictionsModal.jsx'
@@ -218,6 +221,9 @@ export default function WorldCupPoolApp() {
 
   const [specials, setSpecials] = useState(() => mergeSpecials(null))
   const [sessionConnected, setSessionConnected] = useState(false)
+  const [sessionRestoreBusy, setSessionRestoreBusy] = useState(
+    () => typeof window !== 'undefined' && readSessionActive() && Boolean(readStoredUsername()),
+  )
   const [groupViewMode, setGroupViewMode] = useState(() => {
     if (typeof window === 'undefined') return 'list'
     try {
@@ -267,6 +273,66 @@ export default function WorldCupPoolApp() {
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
+
+  const applyPorraRowFromDatabase = useCallback(row => {
+    const u = normalizeUsername(String(row?.username ?? ''))
+    setUsername(row?.username || u)
+    setDisplayName(
+      (typeof row?.display_name === 'string' && row.display_name.trim()) ||
+        (typeof row?.displayName === 'string' && row.displayName.trim()) ||
+        (typeof row?.nickname === 'string' && row.nickname.trim()) ||
+        '',
+    )
+    setPredictions(row?.predictions && typeof row.predictions === 'object' ? row.predictions : {})
+    setKnockoutScores(row?.knockout && typeof row.knockout === 'object' ? row.knockout : {})
+    setSpecials(mergeSpecials(row?.specials))
+    setSessionConnected(true)
+    writeSessionActive(true)
+  }, [])
+
+  useEffect(() => {
+    if (!readSessionActive()) return
+
+    const storedUser = readStoredUsername()
+    const normalizedUser = normalizeUsername(storedUser)
+    if (!storedUser || validateUsername(normalizedUser)) {
+      writeSessionActive(false)
+      setSessionRestoreBusy(false)
+      return
+    }
+
+    let cancelled = false
+    ;(async () => {
+      setSessionRestoreBusy(true)
+      try {
+        const { data, error } = await supabase
+          .from('predictions')
+          .select('*')
+          .eq('username', normalizedUser)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (cancelled) return
+
+        if (error || !data) {
+          writeSessionActive(false)
+          return
+        }
+
+        applyPorraRowFromDatabase(data)
+      } catch (e) {
+        console.error(e)
+        if (!cancelled) writeSessionActive(false)
+      } finally {
+        if (!cancelled) setSessionRestoreBusy(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [applyPorraRowFromDatabase])
 
   useEffect(() => {
     const sync = async () => {
@@ -381,6 +447,7 @@ export default function WorldCupPoolApp() {
       const fresh = await fetchAllPredictions()
       setSavedUsers(fresh)
       setSessionConnected(true)
+      writeSessionActive(true)
       showModal({
         variant: saveWarnings.length > 0 ? 'info' : 'success',
         title: saveWarnings.length > 0 ? 'Porra guardada · datos pendientes' : 'Porra guardada',
@@ -443,27 +510,14 @@ export default function WorldCupPoolApp() {
         return
       }
 
-      setUsername(data.username || u)
-      setDisplayName(
-        (typeof data.display_name === 'string' && data.display_name.trim()) ||
-          (typeof data.displayName === 'string' && data.displayName.trim()) ||
-          (typeof data.nickname === 'string' && data.nickname.trim()) ||
-          '',
-      )
-      setPredictions(
-        data.predictions && typeof data.predictions === 'object' ? data.predictions : {},
-      )
-      setKnockoutScores(
-        data.knockout && typeof data.knockout === 'object' ? data.knockout : {},
-      )
-      setSpecials(mergeSpecials(data.specials))
-      setSessionConnected(true)
+      applyPorraRowFromDatabase(data)
     } finally {
       setLoadBusy(false)
     }
   }
 
   const disconnectSession = () => {
+    clearStoredSession()
     setSessionConnected(false)
     setUsername('')
     setDisplayName('')
@@ -762,7 +816,14 @@ export default function WorldCupPoolApp() {
             </div>
 
             <div className="bg-black/25 backdrop-blur-md rounded-2xl border border-white/15 p-5 w-full md:max-w-md md:w-[26rem]">
-              {sessionConnected ? (
+              {sessionRestoreBusy ? (
+                <div className="py-6 text-center" role="status" aria-live="polite">
+                  <p className="text-sm font-semibold text-sky-100 m-0">Restaurando tu sesión…</p>
+                  <p className="text-xs text-sky-200/65 mt-2 m-0 leading-snug">
+                    Recuperando tu porra guardada en este navegador.
+                  </p>
+                </div>
+              ) : sessionConnected ? (
                 <>
                   <div
                     className="flex items-start gap-3 mb-4"
